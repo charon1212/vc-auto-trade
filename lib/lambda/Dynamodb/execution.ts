@@ -6,6 +6,10 @@ const db = new AWS.DynamoDB.DocumentClient();
 
 const suffixExecution = 'EXEC';
 
+const getExecutionClassType = (productCode: string) => {
+  return productCode + suffixExecution;
+}
+
 export const setExecution = async (productCode: string, sortKey: string, data: ExecutionItem[]) => {
 
   const classType = productCode + suffixExecution;
@@ -13,7 +17,7 @@ export const setExecution = async (productCode: string, sortKey: string, data: E
     await db.put({
       TableName: process.env.TableName || '',
       Item: {
-        ClassType: classType,
+        ClassType: getExecutionClassType(productCode),
         SortKey: sortKey,
         ExecutionList: data,
       }
@@ -32,14 +36,12 @@ export type ExecutionDynamoDB = {
 
 /**
  * 約定履歴の一覧を取得する。
- * @param classType 分類番号。
+ * @param productCode プロダクトコード。
  * @param sortKeyStart ソートキーの開始。境界値は最終結果に含まれる。
  * @param sotrKeyEnd ソートキーの終了。境界値は最終結果に含まれる。
  */
-export const searchExecutions = async (classType: string, sortKeyStart: string, sotrKeyEnd: string) => {
-
+export const searchExecutions = async (productCode: string, sortKeyStart: string, sotrKeyEnd: string) => {
   try {
-
     const res = await db.query({
       TableName: process.env.TableName || '',
       KeyConditionExpression: '#PK = :pk AND #SK BETWEEN :sk1 AND :sk2',
@@ -48,22 +50,40 @@ export const searchExecutions = async (classType: string, sortKeyStart: string, 
         '#SK': 'SortKey',
       },
       ExpressionAttributeValues: {
-        ':pk': classType,
+        ':pk': getExecutionClassType(productCode),
         ':sk1': sortKeyStart,
         ':sk2': sotrKeyEnd,
       }
     }).promise();
-
     return {
       count: res.Count,
       result: res.Items as ExecutionDynamoDB[],
     };
-
   } catch (err) {
-
-    handleError('', `DBの検索に失敗。classType: ${classType}, sortKeyStart: ${sortKeyStart}, sortKeyEnd: ${sotrKeyEnd}`, err);
+    handleError('', `DBの検索に失敗。productCode: ${productCode}, sortKeyStart: ${sortKeyStart}, sortKeyEnd: ${sotrKeyEnd}`, err);
     return;
-
   }
-
 };
+
+/**
+ * 約定履歴を削除する。
+ *
+ * @param productCode プロダクトコード
+ * @param sortKey ソートキー
+ * @returns 削除に成功すればtrue、失敗すればfalse。
+ */
+export const deleteExecution = async (productCode: string, sortKey: string) => {
+  try {
+    await db.delete({
+      TableName: process.env.TableName || '',
+      Key: {
+        ClassType: getExecutionClassType(productCode),
+        SortKey: sortKey,
+      }
+    }).promise();
+    return true;
+  } catch (err) {
+    handleError('', `deleteExecution::DBの削除に失敗。productCode: ${productCode}, sortKey: ${sortKey}`, err);
+    return false;
+  }
+}
