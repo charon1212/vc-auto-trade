@@ -43,10 +43,9 @@ const saveExecutionHistory = async (productCode: string, date: Date) => {
     if (data.totalSize) data.price = data.price / data.totalSize;
   }
 
-  const classType = productCode + 'EXEC';
   const sortKey = (getTotalMinute(date) * 60 * 1000).toString();
 
-  await setExecution(classType, sortKey, saveData);
+  await setExecution(productCode, sortKey, saveData);
 
 };
 
