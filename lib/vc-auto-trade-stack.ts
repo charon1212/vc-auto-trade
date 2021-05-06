@@ -59,11 +59,13 @@ export class VcAutoTradeStack extends cdk.Stack {
       code: lambda.Code.fromAsset('lib/lambda'),
       handler: 'transDynamoData.handler',
       environment: {
+        TableName: dynamoTable.tableName,
         BucketName: s3Bucket.bucketName,
       },
     });
 
     s3Bucket.grantReadWrite(funcTransDynamoData as any); // なぜか型エラーが出て解決できない。。。苦肉のAs any。
+    dynamoTable.grantReadData(funcTransDynamoData);
 
     const ruleTransDynamoData = new events.Rule(this, 'ruleTransDynamoData', {
       schedule: events.Schedule.cron({ minute: '0', hour: '1', day: '*', month: '*', year: '*' }), // 毎日午前10時(UTC 1時)に実施
