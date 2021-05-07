@@ -12,7 +12,6 @@ const getExecutionClassType = (productCode: string) => {
 
 export const setExecution = async (productCode: string, sortKey: string, data: ExecutionItem[]) => {
 
-  const classType = productCode + suffixExecution;
   try {
     await db.put({
       TableName: process.env.TableName || '',
