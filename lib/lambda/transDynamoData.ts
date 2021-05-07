@@ -34,12 +34,19 @@ const exec = async (productCode: string, year: number, month: number, day: numbe
 
     await writeTextFile(csvFilePath, csvBody);
 
-    for (let item of res.result) {
-      // 怖いので、書き込みがうまくいっていることが分かるまでは消さない。
-      // await deleteExecution(productCode, item.SortKey);
-    }
+    // 怖いので、書き込みがうまくいっていることが分かるまでは消さない。
+    // await deleteAllExecution(productCode, res.result);
+
   }
 
+};
+
+const deleteAllExecution = async (productCode: string, list: ExecutionDynamoDB[]) => {
+  const promiseList: Promise<boolean>[] = [];
+  for (let item of list) {
+    promiseList.push(deleteExecution(productCode, item.SortKey));
+  }
+  return Promise.all(promiseList);
 };
 
 /**
