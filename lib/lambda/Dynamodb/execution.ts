@@ -1,8 +1,6 @@
 import { ExecutionItem } from "../ExecutionHistory/saveExecutionHistory";
-import * as AWS from 'aws-sdk';
 import handleError from "../HandleError/handleError";
-
-const db = new AWS.DynamoDB.DocumentClient();
+import { db } from "./db";
 
 const suffixExecution = 'EXEC';
 
