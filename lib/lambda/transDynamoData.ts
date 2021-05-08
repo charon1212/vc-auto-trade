@@ -1,11 +1,15 @@
-import { productCodeXRP } from "./const";
 import { deleteExecution, ExecutionDynamoDB, searchExecutions } from "./Interfaces/AWS/Dynamodb/execution";
 import { writeTextFile } from "./Interfaces/AWS/S3/writeTextFile";
+import { productSettings } from "./Main/productSettings";
 
 exports.handler = async function (event: any) {
 
   const now = new Date();
-  await exec(productCodeXRP, now.getFullYear(), now.getMonth(), now.getDate());
+
+  // 重ければ非同期処理を並列実行させる。今は直列実行（めんどいし、Dailyバッチで速度が必要ないため）
+  for (let productSetting of productSettings) {
+    await exec(productSetting.productCode, now.getFullYear(), now.getMonth(), now.getDate());
+  }
 
   return '';
 
