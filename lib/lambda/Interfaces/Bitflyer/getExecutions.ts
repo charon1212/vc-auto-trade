@@ -17,17 +17,23 @@ export type ExecutionBitflyer = {
  *
  * @param productCode 製品コード
  * @param count 数値。1～500を指定。
+ * @param before IDの最大値。検索結果はこの値を含まない。
+ * @param after IDの最小値。検索結果はこの値を含まない。
+ * @returns 取得した約定履歴。エラー時は空配列。
  */
-export const getExecutions = async (productCode: string, count: number) => {
+export const getExecutions = async (productCode: string, count: number, before?: number, after?: number) => {
 
   count = Math.floor(count);
   if (count < 1 || count > 500) {
     handleError('', 'getExecutions::countの範囲が不一致');
-    return;
+    return [];
   }
 
+  let url = urlBase + `executions?product_code=${productCode}&count=${count}`;
+  if (before !== undefined) url += `&before=${before}`;
+  if (after !== undefined) url += `&after=${after}`;
+
   try {
-    const url = urlBase + `executions?product_code=${productCode}&count=${count}`;
     const res = await fetch(url);
     const json = await res.json();
     for (let exec of json) {
@@ -37,7 +43,7 @@ export const getExecutions = async (productCode: string, count: number) => {
     return json as ExecutionBitflyer[];
   } catch (e) {
     handleError('', `API通信でエラー：${JSON.stringify(e)}`);
-    return;
+    return [];
   }
 
 };
