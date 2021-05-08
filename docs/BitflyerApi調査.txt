@@ -1,0 +1,118 @@
+元情報：https://lightning.bitflyer.com/docs?lang=ja
+エンドポイント URL: https://api.bitflyer.com/v1/
+
+■■■■Public API■■■■
+
+■マーケット一覧
+・URL
+    GET https://api.bitflyer.com/v1/markets
+・Result
+[
+  { "product_code": "BTC_JPY", "market_type": "Spot" },
+  { "product_code": "XRP_JPY", "market_type": "Spot" },
+  ...
+]
+
+■板情報(現在出ている成立していない指値注文)
+・URL
+    GET https://api.bitflyer.com/v1/board?product_code=${productCode}
+・Param
+    productCode:マーケットの種類を識別するコード。Bitcoin⇔日本円は「BTC_JPY」。上のマーケット一覧からとれる。
+・Result
+{
+  "mid_price": 6248501.0,
+  "bids": [ // 買い注文(値段が高い順)
+    { "price": 6248402.0, "size": 0.01 },
+    { "price": 6246929.0, "size": 0.03 },
+    { "price": 6246536.0, "size": 0.1135 },
+    ...
+  ],
+  "asks": [ // 売り注文(値段が安い順)
+    { "price": 6248600.0, "size": 0.167992 },
+    { "price": 6248797.0, "size": 0.14032468 },
+    { "price": 6249361.0, "size": 0.0942 },
+    ...
+  ]
+}
+
+■Ticker
+・URL
+    GET https://api.bitflyer.com/v1/ticker?product_code=${productCode}
+・Param
+    productCode:マーケットの種類を識別するコード。Bitcoin⇔日本円は「BTC_JPY」。上のマーケット一覧からとれる。
+・Result
+{
+  "product_code": "BTC_JPY",
+  "state": "RUNNING", // 板の稼働状態。
+  "timestamp": "2021-05-02T05:40:50.52",
+  "tick_id": 20009629,
+  "best_bid": 6242302.0,
+  "best_ask": 6243676.0,
+  "best_bid_size": 0.06,
+  "best_ask_size": 0.04,
+  "total_bid_depth": 508.25507457,
+  "total_ask_depth": 1289.11553529,
+  "market_bid_size": 0.0,
+  "market_ask_size": 0.0,
+  "ltp": 6244651.0,
+  "volume": 4567.36946058,
+  "volume_by_product": 2884.13625935
+}
+
+■約定履歴
+・URL
+    GET https://api.bitflyer.com/v1/executions?product_code=${productCode}&count=${count}
+・Param
+    productCode:マーケットの種類を識別するコード。Bitcoin⇔日本円は「BTC_JPY」。上のマーケット一覧からとれる。
+    count:取得するデータ数。最大500っぽい。
+    (before&afterも利用可)
+・Result
+[
+  {
+    "id": 2210197340, // 連番
+    "side": "SELL", // 売り注文によって成立したか、買い注文によって成立したか
+    "price": 6268358.0, // 値段
+    "size": 0.01, // サイズ
+    "exec_date": "2021-05-03T00:25:51.5", // 実施日
+    "buy_child_order_acceptance_id": "JRF20210503-002542-069993",
+    "sell_child_order_acceptance_id": "JRF20210503-002551-284049"
+  },
+  ...
+]
+
+■板状態
+・URL
+    GET https://api.bitflyer.com/v1/getboardstate?product_code=${productCode}
+・Param
+    productCode:マーケットの種類を識別するコード。Bitcoin⇔日本円は「BTC_JPY」。上のマーケット一覧からとれる。
+・Result
+{
+  "health": "NORMAL",
+  "state": "RUNNING",
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
