@@ -1,5 +1,5 @@
-import { ExecutionItem } from "../ExecutionHistory/saveExecutionHistory";
-import handleError from "../HandleError/handleError";
+import { ExecutionItem } from "../../../Main/ExecutionHistory/saveExecutionHistory";
+import handleError from "../../../HandleError/handleError";
 import { db } from "./db";
 
 const suffixExecution = 'EXEC';

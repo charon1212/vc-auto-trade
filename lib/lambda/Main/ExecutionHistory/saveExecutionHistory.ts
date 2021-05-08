@@ -1,5 +1,5 @@
-import { getExecutions } from "../Bitflyer/getExecutions";
-import { setExecution } from "../Dynamodb/execution";
+import { getExecutions } from "../../Interfaces/Bitflyer/getExecutions";
+import { setExecution } from "../../Interfaces/AWS/Dynamodb/execution";
 
 export type ExecutionItem = {
   timestamp: number,

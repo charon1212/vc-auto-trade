@@ -1,6 +1,6 @@
 import { productCodeXRP } from "./const";
-import { deleteExecution, ExecutionDynamoDB, searchExecutions } from "./Dynamodb/execution";
-import { writeTextFile } from "./S3/writeTextFile";
+import { deleteExecution, ExecutionDynamoDB, searchExecutions } from "./Interfaces/AWS/Dynamodb/execution";
+import { writeTextFile } from "./Interfaces/AWS/S3/writeTextFile";
 
 exports.handler = async function (event: any) {
 

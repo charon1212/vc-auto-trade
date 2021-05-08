@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
-import { urlBase } from '../const';
-import handleError from '../HandleError/handleError';
+import { urlBase } from '../../const';
+import handleError from '../../HandleError/handleError';
 
 export type ExecutionBitflyer = {
   id: number,
