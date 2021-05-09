@@ -13,6 +13,7 @@ type ContextRecord = {
   data: VCATProductContext,
 };
 
+const contextSortKey = 'context';
 const suffixContext = 'CONTEXT';
 
 const getProductContextClassType = (productCode: string) => {
@@ -25,7 +26,7 @@ export const getProductContext = async (productCode: string): Promise<VCATProduc
       TableName: process.env.TableName || '',
       Key: {
         'ClassType': getProductContextClassType(productCode),
-        'SortKey': '',
+        'SortKey': contextSortKey,
       },
     }).promise();
     if (res.Item) {
@@ -43,7 +44,7 @@ export const getProductContext = async (productCode: string): Promise<VCATProduc
 export const setProductContext = async (productCode: string, data: VCATProductContext) => {
   const item: ContextRecord = {
     ClassType: getProductContextClassType(productCode),
-    SortKey: '',
+    SortKey: contextSortKey,
     data: data,
   };
   try {
