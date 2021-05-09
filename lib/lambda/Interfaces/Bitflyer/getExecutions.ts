@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import { urlBase } from '../../Common/const';
 import handleError from '../../HandleError/handleError';
+import { sendRequest } from './apiRequest';
 
 export type ExecutionBitflyer = {
   id: number,
@@ -29,12 +30,16 @@ export const getExecutions = async (productCode: string, count: number, before?:
     return [];
   }
 
-  let url = urlBase + `executions?product_code=${productCode}&count=${count}`;
-  if (before !== undefined) url += `&before=${before}`;
-  if (after !== undefined) url += `&after=${after}`;
-
   try {
-    const res = await fetch(url);
+    const res = await sendRequest({
+      uri: 'executions',
+      queryParams: {
+        product_code: productCode,
+        count: count.toString(),
+        before: before?.toString(),
+        after: after?.toString(),
+      },
+    });
     const json = await res.json();
     for (let exec of json) {
       // 日付を文字列からDateへ変換する。
