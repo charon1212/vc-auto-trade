@@ -4,8 +4,6 @@ import * as cdk from '@aws-cdk/core';
 import { VcAutoTradeStack } from '../lib/vc-auto-trade-stack';
 import { VcAutoTradeStackDev } from '../lib/vc-auto-trade-stack-dev';
 
-console.log(process.env.SYSTEM_ENV);
-
 const isProductionBuild = process.env.ENV_NAME === 'production';
 if (isProductionBuild) {
   console.log(`■■■■■■■■■■■■■■■■■■■■
