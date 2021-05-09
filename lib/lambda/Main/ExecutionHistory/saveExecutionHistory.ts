@@ -34,7 +34,8 @@ const saveExecutionHistory = async (productCode: string, date: Date) => {
    * 足りなければ、beforeを設定してもう一度読み取る。
    */
   for (let i = 0; i < 10; i++) {
-    const res: ExecutionBitflyer[] = await getExecutions(productCode, 30, before, lastExecutionId);
+    // after は lastExecutionId - 1 にしておかないと、1分前のデータが取得できず、取得できなくなるまでAPIリクエストを投げることになる。
+    const res: ExecutionBitflyer[] = await getExecutions(productCode, 30, before, lastExecutionId && lastExecutionId - 1);
     if (res.length === 0) break;
     executionList.push(...res);
     const startExecutionTimestamp = res[res.length - 1].exec_date.getTime();
