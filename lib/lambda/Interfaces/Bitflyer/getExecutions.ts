@@ -1,5 +1,4 @@
-import fetch from 'node-fetch';
-import { urlBase } from '../../Common/const';
+import { appLogger } from '../../Common/log';
 import handleError from '../../HandleError/handleError';
 import { sendRequest } from './apiRequest';
 
@@ -45,6 +44,7 @@ export const getExecutions = async (productCode: string, count: number, before?:
       // 日付を文字列からDateへ変換する。
       exec.exec_date = convert(exec.exec_date);
     }
+    appLogger.info(`apiGetData: ${JSON.stringify(json)}`);
     return json as ExecutionBitflyer[];
   } catch (err) {
     handleError(__filename, 'getExecutions', 'code', 'API通信でエラー', { productCode, count, before, after }, err);
