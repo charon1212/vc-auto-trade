@@ -2,6 +2,7 @@ import { ExecutionItem } from "../../../Main/ExecutionHistory/saveExecutionHisto
 import handleError from "../../../HandleError/handleError";
 import { db } from "./db";
 import { processEnv } from "../../../Common/processEnv";
+import { appLogger } from "../../../Common/log";
 
 const suffixExecution = 'EXEC';
 
@@ -10,6 +11,8 @@ const getExecutionClassType = (productCode: string) => {
 }
 
 export const setExecution = async (productCode: string, sortKey: string, data: ExecutionItem[]) => {
+
+  appLogger.info(`DynamoDB::setExecution, productCode:${productCode}, sortKey: ${sortKey}, data: ${JSON.stringify(data)}`);
 
   try {
     await db.put({
@@ -53,6 +56,7 @@ export const searchExecutions = async (productCode: string, sortKeyStart: string
         ':sk2': sotrKeyEnd,
       }
     }).promise();
+    appLogger.info(`DynamoDB::searchExecutions, productCode:${productCode}, result: ${JSON.stringify(res)}`);
     return {
       count: res.Count,
       result: res.Items as ExecutionDynamoDB[],
@@ -71,6 +75,7 @@ export const searchExecutions = async (productCode: string, sortKeyStart: string
  * @returns 削除に成功すればtrue、失敗すればfalse。
  */
 export const deleteExecution = async (productCode: string, sortKey: string) => {
+  appLogger.info(`DynamoDB::deleteExecution, productCode:${productCode}, sortKey: ${sortKey}`);
   try {
     await db.delete({
       TableName: processEnv.TableName,

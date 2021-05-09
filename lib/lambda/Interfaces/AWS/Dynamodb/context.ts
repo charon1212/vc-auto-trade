@@ -1,3 +1,4 @@
+import { appLogger } from "../../../Common/log";
 import { processEnv } from "../../../Common/processEnv";
 import handleError from "../../../HandleError/handleError";
 import { db } from "./db";
@@ -30,6 +31,7 @@ export const getProductContext = async (productCode: string): Promise<VCATProduc
         'SortKey': contextSortKey,
       },
     }).promise();
+    appLogger.info(`DynamoDB::getProductContext, productCode:${productCode}, result: ${JSON.stringify(res)}`);
     if (res.Item) {
       const record = res.Item as ContextRecord;
       return record.data;
@@ -48,6 +50,7 @@ export const setProductContext = async (productCode: string, data: VCATProductCo
     SortKey: contextSortKey,
     data: data,
   };
+  appLogger.info(`DynamoDB::setProductContext, productCode:${productCode}, item: ${JSON.stringify(item)}`);
   try {
     await db.put({
       TableName: processEnv.TableName,
