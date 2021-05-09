@@ -35,7 +35,7 @@ export const getProductContext = (productCode: string): VCATProductContext => {
   if (productContext) {
     return productContext
   } else {
-    handleError('', 'ProductContextの取得に失敗。');
+    handleError(__filename, 'getProductContext', 'code', 'ProductContextの取得に失敗。', { productCode });
     return {};
   }
 

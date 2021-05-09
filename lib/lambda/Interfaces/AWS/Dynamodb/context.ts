@@ -35,7 +35,7 @@ export const getProductContext = async (productCode: string): Promise<VCATProduc
       return {};
     }
   } catch (err) {
-    handleError('', `ProductContextの取得に失敗。productCode:${productCode}`, err);
+    handleError(__filename, 'getProductContextClassType', 'code', 'ProductContextの取得に失敗。', { productCode }, err);
     return {};
   }
 };
@@ -52,7 +52,7 @@ export const setProductContext = async (productCode: string, data: VCATProductCo
       Item: item,
     }).promise();
   } catch (err) {
-    handleError('', '', err);
+    handleError(__filename, 'setProductContext', 'code', 'ProductContextの保存に失敗。', { productCode, data }, err);
     return;
   }
 };

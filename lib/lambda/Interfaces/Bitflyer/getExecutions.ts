@@ -25,7 +25,7 @@ export const getExecutions = async (productCode: string, count: number, before?:
 
   count = Math.floor(count);
   if (count < 1 || count > 500) {
-    handleError('', 'getExecutions::countの範囲が不一致');
+    handleError(__filename, 'getExecutions', 'code', 'countの範囲が不一致', { productCode, count, before, after });
     return [];
   }
 
@@ -41,8 +41,8 @@ export const getExecutions = async (productCode: string, count: number, before?:
       exec.exec_date = convert(exec.exec_date);
     }
     return json as ExecutionBitflyer[];
-  } catch (e) {
-    handleError('', `API通信でエラー：${JSON.stringify(e)}`);
+  } catch (err) {
+    handleError(__filename, 'getExecutions', 'code', 'API通信でエラー', { productCode, count, before, after }, err);
     return [];
   }
 
