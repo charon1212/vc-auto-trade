@@ -1,6 +1,7 @@
 import { ExecutionItem } from "../../../Main/ExecutionHistory/saveExecutionHistory";
 import handleError from "../../../HandleError/handleError";
 import { db } from "./db";
+import { processEnv } from "../../../Common/processEnv";
 
 const suffixExecution = 'EXEC';
 
@@ -12,7 +13,7 @@ export const setExecution = async (productCode: string, sortKey: string, data: E
 
   try {
     await db.put({
-      TableName: process.env.TableName || '',
+      TableName: processEnv.TableName,
       Item: {
         ClassType: getExecutionClassType(productCode),
         SortKey: sortKey,
@@ -40,7 +41,7 @@ export type ExecutionDynamoDB = {
 export const searchExecutions = async (productCode: string, sortKeyStart: string, sotrKeyEnd: string) => {
   try {
     const res = await db.query({
-      TableName: process.env.TableName || '',
+      TableName: processEnv.TableName,
       KeyConditionExpression: '#PK = :pk AND #SK BETWEEN :sk1 AND :sk2',
       ExpressionAttributeNames: {
         '#PK': 'ClassType',
@@ -72,7 +73,7 @@ export const searchExecutions = async (productCode: string, sortKeyStart: string
 export const deleteExecution = async (productCode: string, sortKey: string) => {
   try {
     await db.delete({
-      TableName: process.env.TableName || '',
+      TableName: processEnv.TableName,
       Key: {
         ClassType: getExecutionClassType(productCode),
         SortKey: sortKey,

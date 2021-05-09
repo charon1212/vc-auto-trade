@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { urlBase } from '../../const';
+import { urlBase } from '../../Common/const';
 import handleError from '../../HandleError/handleError';
 
 export type ExecutionBitflyer = {

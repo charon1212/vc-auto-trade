@@ -1,3 +1,4 @@
+import { processEnv } from "../../../Common/processEnv";
 import handleError from "../../../HandleError/handleError";
 import { db } from "./db";
 
@@ -23,7 +24,7 @@ const getProductContextClassType = (productCode: string) => {
 export const getProductContext = async (productCode: string): Promise<VCATProductContext> => {
   try {
     const res = await db.get({
-      TableName: process.env.TableName || '',
+      TableName: processEnv.TableName,
       Key: {
         'ClassType': getProductContextClassType(productCode),
         'SortKey': contextSortKey,
@@ -49,7 +50,7 @@ export const setProductContext = async (productCode: string, data: VCATProductCo
   };
   try {
     await db.put({
-      TableName: process.env.TableName || '',
+      TableName: processEnv.TableName,
       Item: item,
     }).promise();
   } catch (err) {
