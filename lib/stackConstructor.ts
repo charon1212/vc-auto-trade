@@ -46,6 +46,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       EnvName: env,
       AKEY: accessKey,
       SKEY: secretAccessKey,
+      LogLevel: 'DEBUG',
     },
   });
 

@@ -1,3 +1,5 @@
+import { appLogger } from "../Common/log";
+
 /**
  * エラーハンドリング
  * @param filePath 呼び出し元のファイルパス
@@ -14,7 +16,7 @@ const handleError = (filePath: string, methodName: string, code?: string, msg?: 
   if (msg) output += `■メッセージ：${msg}\r\n`;
   if (args) output += `■引数：${JSON.stringify(args)}\r\n`;
   if (err) output += `■エラー内容：${JSON.stringify(err)}`;
-  console.error(output);
+  appLogger.error(output);
 };
 
 export default handleError;
