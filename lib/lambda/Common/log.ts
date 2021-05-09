@@ -5,7 +5,7 @@ const maxLogLevel = logLevelMap.get(processEnv.LogLevel);
 
 const putLog = (log: any, putProduction: boolean, logLevel: number, logger: (log: any) => void) => {
 
-  if (!putProduction && processEnv.EnvName !== '') return;
+  if (!putProduction && processEnv.EnvName === '') return;
   if (maxLogLevel && logLevel <= maxLogLevel) logger(log);
 
 }
