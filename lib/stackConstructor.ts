@@ -18,6 +18,8 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
   const accessKey = process.env.AKEY || '';
   const secretAccessKey = process.env.SKEY || '';
 
+  const envName = (env === 'dev') ? 'dev' : 'production';
+
   const dynamoTable = new Table(scope, 'vcAutoTrade' + env, {
     partitionKey: {
       name: 'ClassType',
@@ -43,7 +45,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     handler: 'main.handler',
     environment: {
       TableName: dynamoTable.tableName,
-      EnvName: env,
+      EnvName: envName,
       AKEY: accessKey,
       SKEY: secretAccessKey,
       LogLevel: 'DEBUG',
@@ -66,7 +68,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     environment: {
       TableName: dynamoTable.tableName,
       BucketName: s3Bucket.bucketName,
-      EnvName: env,
+      EnvName: envName,
     },
   });
 
