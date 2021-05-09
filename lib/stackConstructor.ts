@@ -43,6 +43,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     handler: 'main.handler',
     environment: {
       TableName: dynamoTable.tableName,
+      EnvName: env,
       AKEY: accessKey,
       SKEY: secretAccessKey,
     },
@@ -64,6 +65,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     environment: {
       TableName: dynamoTable.tableName,
       BucketName: s3Bucket.bucketName,
+      EnvName: env,
     },
   });
 
