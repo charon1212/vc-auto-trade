@@ -6,13 +6,13 @@ import { VcAutoTradeStackDev } from '../lib/vc-auto-trade-stack-dev';
 
 const isProductionBuild = process.env.ENV_NAME === 'production';
 if (isProductionBuild) {
-  console.log(`■■■■■■■■■■■■■■■■■■■■
-■■■■■■■■■■■■■■■■■■■■
-■■注意！　本番環境用のデプロイです■■
-■■■■■■■■■■■■■■■■■■■■
-■■■■■■■■■■■■■■■■■■■■`);
+  console.log(`****************************************
+****************************************
+CAUTION!!  Production Deploy
+****************************************
+****************************************`);
 } else {
-  console.log('■■開発環境デプロイ■■');
+  console.log('****Development Deploy****');
 }
 
 const params = {};
