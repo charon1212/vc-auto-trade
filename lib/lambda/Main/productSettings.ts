@@ -3,7 +3,9 @@ export type ProductSetting = {
 };
 
 export const productSettings: ProductSetting[] = [
-  { productCode: 'XRP_JPY' }
+  { productCode: 'XRP_JPY' },
+  { productCode: 'BTC_JPY' },
+  { productCode: 'ETH_JPY' },
 ];
 
 export const getProductSetting = (productCode: string) => {
