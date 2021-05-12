@@ -5,6 +5,7 @@ import * as targets from '@aws-cdk/aws-events-targets';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as dotenv from 'dotenv';
 import { AttributeType, Table } from '@aws-cdk/aws-dynamodb';
+import { Duration } from '@aws-cdk/core';
 
 /**
  * 構築するインフラを定義する
@@ -18,7 +19,8 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
   const accessKey = process.env.AKEY || '';
   const secretAccessKey = process.env.SKEY || '';
 
-  const envName = (env === 'dev') ? 'dev' : 'production';
+  const isProduction = (env === '');
+  const envName = isProduction ? 'production' : 'dev';
 
   const dynamoTable = new Table(scope, 'vcAutoTrade' + env, {
     partitionKey: {
@@ -39,6 +41,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
 
   /** メインの処理バッチ */
 
+  const funcTimeoutSeconds = isProduction ? 10 : 5;
   const func = new lambda.Function(scope, 'MainHandler' + env, {
     runtime: lambda.Runtime.NODEJS_14_X,
     code: lambda.Code.fromAsset('lib/lambda'),
@@ -50,6 +53,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       SKEY: secretAccessKey,
       LogLevel: 'DEBUG',
     },
+    timeout: (Duration.seconds(funcTimeoutSeconds) as any),
   });
 
   dynamoTable.grantFullAccess(func);
@@ -60,7 +64,6 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
   rule.addTarget(new targets.LambdaFunction(func, {}));
 
   /** データ移行バッチ */
-
   const funcTransDynamoData = new lambda.Function(scope, 'TransDynamoDataHandler' + env, {
     runtime: lambda.Runtime.NODEJS_14_X,
     code: lambda.Code.fromAsset('lib/lambda'),
@@ -70,6 +73,8 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       BucketName: s3Bucket.bucketName,
       EnvName: envName,
     },
+    timeout: Duration.seconds(60) as any,
+    memorySize: 1024,
   });
 
   s3Bucket.grantReadWrite(funcTransDynamoData as any); // なぜか型エラーが出て解決できない。。。苦肉のAs any。
