@@ -2,13 +2,26 @@ import { deleteExecution, ExecutionDynamoDB, searchExecutions } from "./Interfac
 import { writeTextFile } from "./Interfaces/AWS/S3/writeTextFile";
 import { productSettings } from "./Main/productSettings";
 
-exports.handler = async function (event: any) {
+/**
+ * target: 指定した日付を狙い撃ちしてデータ移行する場合は、その年月日を指定する。ただし、2日後の値を指定する必要がある。
+ * また、monthは0から始まる整数で指定する。それ以外は1から始まる整数で指定する。
+ */
+type handlerEvent = {
+  target?: {
+    year: number, month: number, date: number,
+  }
+};
+
+exports.handler = async function (event: handlerEvent) {
 
   const now = new Date();
+  const targetDate = event.target;
+
+  const { year, month, date } = targetDate || { year: now.getFullYear(), month: now.getMonth(), date: now.getDate() };
 
   // 重ければ非同期処理を並列実行させる。今は直列実行（めんどいし、Dailyバッチで速度が必要ないため）
   for (let productSetting of productSettings) {
-    await exec(productSetting.productCode, now.getFullYear(), now.getMonth(), now.getDate());
+    await exec(productSetting.productCode, year, month, date);
   }
 
   return '';
@@ -34,7 +47,7 @@ const exec = async (productCode: string, year: number, month: number, day: numbe
     const csvBody = makeCsvBody(res.result);
     const yearMonthStr = `${before2Day.getFullYear()}-${before2Day.getMonth() + 1}`;
     const yearMonthDayStr = yearMonthStr + `-${before2Day.getDate()}`;
-    const csvFilePath = `EXEC_HISTORY_${yearMonthStr}/data_${yearMonthDayStr}.csv`;
+    const csvFilePath = `EXEC_HISTORY_${productCode}_${yearMonthStr}/data_${yearMonthDayStr}.csv`;
 
     await writeTextFile(csvFilePath, csvBody);
 
