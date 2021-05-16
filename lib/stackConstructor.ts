@@ -16,11 +16,13 @@ import { Duration } from '@aws-cdk/core';
 export const stackConstructor = (scope: cdk.Construct, env: string) => {
 
   dotenv.config(); // load .env file.
-  const accessKey = process.env.AKEY || '';
-  const secretAccessKey = process.env.SKEY || '';
+  const { accessKey, secretAccessKey, slackBotToken, slackChannelProdError, slackChannelProdInfo, slackChannelDevError, slackChannelDevInfo, } = getEnvSettings();
 
   const isProduction = (env === '');
   const envName = isProduction ? 'production' : 'dev';
+
+  const slackChannelInfo = isProduction ? slackChannelProdInfo : slackChannelDevInfo;
+  const slackChannelError = isProduction ? slackChannelProdError : slackChannelDevError;
 
   const dynamoTable = new Table(scope, 'vcAutoTrade' + env, {
     partitionKey: {
@@ -52,6 +54,9 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       AKEY: accessKey,
       SKEY: secretAccessKey,
       LogLevel: 'DEBUG',
+      slackBotToken,
+      slackChannelInfo,
+      slackChannelError,
     },
     timeout: (Duration.seconds(funcTimeoutSeconds) as any),
   });
@@ -72,6 +77,9 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       TableName: dynamoTable.tableName,
       BucketName: s3Bucket.bucketName,
       EnvName: envName,
+      slackBotToken,
+      slackChannelInfo,
+      slackChannelError,
     },
     timeout: Duration.seconds(60) as any,
     memorySize: 1024,
@@ -84,5 +92,24 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     schedule: events.Schedule.cron({ minute: '0', hour: '1', day: '*', month: '*', year: '*' }), // 毎日午前10時(UTC 1時)に実施
   });
   ruleTransDynamoData.addTarget(new targets.LambdaFunction(funcTransDynamoData, {}));
+
+};
+
+const getEnvSettings = () => {
+  const accessKey = process.env.AKEY || '';
+  const secretAccessKey = process.env.SKEY || '';
+  const slackBotToken = process.env.SLACK_API_PROD_BOT_AUTH_TOKEN || '';
+  const slackChannelProdError = process.env.SLACK_API_PROD_ERRORREPORT_CHANNEL || '';
+  const slackChannelProdInfo = process.env.SLACK_API_PROD_INFOREPORT_CHANNEL || '';
+  const slackChannelDevError = process.env.SLACK_API_DEV_ERRORREPORT_CHANNEL || '';
+  const slackChannelDevInfo = process.env.SLACK_API_DEV_INFOREPORT_CHANNEL || '';
+
+  const obj = { accessKey, secretAccessKey, slackBotToken, slackChannelProdError, slackChannelProdInfo, slackChannelDevError, slackChannelDevInfo, };
+
+  Object.values(obj).forEach((v) => {
+    if(!v) throw new Error('設定値が足りません。');
+  });
+
+  return obj;
 
 }
