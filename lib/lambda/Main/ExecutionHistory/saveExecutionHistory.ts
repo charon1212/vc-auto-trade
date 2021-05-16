@@ -18,7 +18,7 @@ export type ExecutionItem = {
 const saveExecutionHistory = async (productCode: string, date: Date) => {
 
   const timestampByMinute = Math.floor(date.getTime() / (60 * 1000)) * 60 * 1000;
-  const productContext = getProductContext(productCode);
+  const productContext = await getProductContext(productCode);
   const lastExecutionId = productContext.lastExecution?.id || undefined;
 
   let executionList: ExecutionBitflyer[] = [];

@@ -24,7 +24,7 @@ export const setExecution = async (productCode: string, sortKey: string, data: E
       }
     }).promise();
   } catch (err) {
-    handleError(__filename, 'setExecution', 'code', 'DBの保存に失敗。', { productCode, sortKey, data, }, err);
+    await handleError(__filename, 'setExecution', 'code', 'DBの保存に失敗。', { productCode, sortKey, data, }, err);
   }
 
 };
@@ -62,7 +62,7 @@ export const searchExecutions = async (productCode: string, sortKeyStart: string
       result: res.Items as ExecutionDynamoDB[],
     };
   } catch (err) {
-    handleError(__filename, 'searchExecutions', 'code', 'DBの検索に失敗。', { productCode, sortKeyStart, sotrKeyEnd, }, err);
+    await handleError(__filename, 'searchExecutions', 'code', 'DBの検索に失敗。', { productCode, sortKeyStart, sotrKeyEnd, }, err);
     return;
   }
 };
@@ -86,7 +86,7 @@ export const deleteExecution = async (productCode: string, sortKey: string) => {
     }).promise();
     return true;
   } catch (err) {
-    handleError(__filename, 'deleteExecution', 'code', 'DBの削除に失敗。', { productCode, sortKey, }, err);
+    await handleError(__filename, 'deleteExecution', 'code', 'DBの削除に失敗。', { productCode, sortKey, }, err);
     return false;
   }
 }

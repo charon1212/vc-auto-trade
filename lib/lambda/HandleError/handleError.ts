@@ -1,4 +1,5 @@
 import { appLogger } from "../Common/log";
+import { sendSlackMessage } from "../Interfaces/Slack/sendSlackMessage";
 
 /**
  * エラーハンドリング
@@ -9,7 +10,7 @@ import { appLogger } from "../Common/log";
  * @param args 呼び出し元のメソッドの引数
  * @param err try-catchで発生したエラーの場合、スローした例外。
  */
-const handleError = (filePath: string, methodName: string, code?: string, msg?: string, args?: object, err?: any) => {
+const handleError = async (filePath: string, methodName: string, code?: string, msg?: string, args?: object, err?: any) => {
 
   let output = `${methodName}でエラー\r\n`;
   output += `■ファイルパス：${filePath}\r\n`;
@@ -17,6 +18,8 @@ const handleError = (filePath: string, methodName: string, code?: string, msg?: 
   if (args) output += `■引数：${JSON.stringify(args)}\r\n`;
   if (err) output += `■エラー内容：${JSON.stringify(err)}`;
   appLogger.error(output);
+  await sendSlackMessage(output, true);
+
 };
 
 export default handleError;
