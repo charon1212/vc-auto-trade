@@ -11,8 +11,8 @@ exports.handler = async function (event: any) {
     minute: { rep: false, value: 0 },
   }; // 毎週日曜の9:00:00 (日本時間)
   if (matchCron(new Date, cron)) {
-    sendSlackMessage(`test message(error). env=${processEnv.EnvName}`, true);
-    sendSlackMessage(`test message(info). env=${processEnv.EnvName}`, false);
+    await sendSlackMessage(`test message(error). env=${processEnv.EnvName}`, true);
+    await sendSlackMessage(`test message(info). env=${processEnv.EnvName}`, false);
   }
   const res = await entry();
   return res;

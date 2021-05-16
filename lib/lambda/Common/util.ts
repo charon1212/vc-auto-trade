@@ -1,3 +1,5 @@
+import { appLogger } from "./log";
+
 type Cron = {
   minute?: CronItem,
   hour?: CronItem,
@@ -18,7 +20,7 @@ type CronItem = {
 export const matchCron = (targetDate: Date, cron: Cron) => {
 
   if (cron.minute && !matchCronItem(targetDate.getUTCMinutes(), cron.minute)) return false;
-  if (cron.hour && !matchCronItem(targetDate.getUTCMinutes(), cron.hour)) return false;
+  if (cron.hour && !matchCronItem(targetDate.getUTCHours(), cron.hour)) return false;
   if (cron.date && !matchCronItem(targetDate.getUTCDate(), cron.date)) return false;
   if (cron.month && !matchCronItem(targetDate.getUTCMonth() + 1, cron.month)) return false;
   if (cron.dayOfWeek && !matchCronItem(targetDate.getUTCDay() + 1, cron.dayOfWeek)) return false;
