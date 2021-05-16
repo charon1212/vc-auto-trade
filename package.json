@@ -8,7 +8,11 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "deploy": "set ENV_NAME=dev&&cdk deploy",
+    "deployProd": "set ENV_NAME=production&&cdk deploy",
+    "destroy": "set ENV_NAME=dev&&cdk destroy",
+    "destroyProd": "set ENV_NAME=production&&cdk destroy"
   },
   "devDependencies": {
     "@aws-cdk/assert": "1.100.0",
