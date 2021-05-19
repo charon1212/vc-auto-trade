@@ -24,6 +24,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
   const slackChannelInfo = isProduction ? slackChannelProdInfo : slackChannelDevInfo;
   const slackChannelError = isProduction ? slackChannelProdError : slackChannelDevError;
 
+  /** ■■Dynamo DB■■ */
   const dynamoTable = new Table(scope, 'vcAutoTrade' + env, {
     partitionKey: {
       name: 'ClassType',
@@ -37,61 +38,68 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     removalPolicy: cdk.RemovalPolicy.RETAIN,
   });
 
+  /** ■■S3 Bucket■■ */
   const s3Bucket = new s3.Bucket(scope, 'vcAutoTradeBucket' + env, {
     bucketName: 'vc-auto-trade-backet' + env,
   });
 
-  /** メインの処理バッチ */
+  /** Lambdaの環境変数 */
+  const lambdaEnvVariables = {
+    TableName: dynamoTable.tableName,
+    BucketName: s3Bucket.bucketName,
+    EnvName: envName,
+    AKEY: accessKey,
+    SKEY: secretAccessKey,
+    LogLevel: 'DEBUG',
+    slackBotToken,
+    slackChannelInfo,
+    slackChannelError,
+  };
 
-  const funcTimeoutSeconds = isProduction ? 10 : 5;
-  const func = new lambda.Function(scope, 'MainHandler' + env, {
-    runtime: lambda.Runtime.NODEJS_14_X,
-    code: lambda.Code.fromAsset('lib/lambda'),
+  /** ■■Lambda(メインハンドラー)■■ */
+  const funcMain = makeLambdaFunc({
+    scope,
+    id: 'MainHandler' + env,
+    codeDirPath: 'lib/lambda',
     handler: 'main.handler',
-    environment: {
-      TableName: dynamoTable.tableName,
-      EnvName: envName,
-      AKEY: accessKey,
-      SKEY: secretAccessKey,
-      LogLevel: 'DEBUG',
-      slackBotToken,
-      slackChannelInfo,
-      slackChannelError,
+    environment: lambdaEnvVariables,
+    timeoutSecond: isProduction ? 10 : 5,
+    schedule: {
+      id: 'rule' + env,
+      cron: { minute: '*/1', hour: '*', day: '*', month: '*', year: '*' },
     },
-    timeout: (Duration.seconds(funcTimeoutSeconds) as any),
   });
+  dynamoTable.grantFullAccess(funcMain);
 
-  dynamoTable.grantFullAccess(func);
-
-  const rule = new events.Rule(scope, 'rule' + env, {
-    schedule: events.Schedule.cron({ minute: '*/1', hour: '*', day: '*', month: '*', year: '*' }),
-  });
-  rule.addTarget(new targets.LambdaFunction(func, {}));
-
-  /** データ移行バッチ */
-  const funcTransDynamoData = new lambda.Function(scope, 'TransDynamoDataHandler' + env, {
-    runtime: lambda.Runtime.NODEJS_14_X,
-    code: lambda.Code.fromAsset('lib/lambda'),
+  /** ■■Lambda(データ移行バッチ)■■ */
+  const funcTransDynamoData = makeLambdaFunc({
+    scope,
+    id: 'TransDynamoDataHandler' + env,
+    codeDirPath: 'lib/lambda',
     handler: 'transDynamoData.handler',
-    environment: {
-      TableName: dynamoTable.tableName,
-      BucketName: s3Bucket.bucketName,
-      EnvName: envName,
-      slackBotToken,
-      slackChannelInfo,
-      slackChannelError,
-    },
-    timeout: Duration.seconds(60) as any,
+    environment: lambdaEnvVariables,
+    timeoutSecond: 60,
     memorySize: 1024,
+    schedule: {
+      id: 'ruleTransDynamoData' + env,
+      cron: { minute: '0', hour: '1', day: '*', month: '*', year: '*' }
+    }
   });
-
   s3Bucket.grantReadWrite(funcTransDynamoData as any); // なぜか型エラーが出て解決できない。。。苦肉のAs any。
   dynamoTable.grantReadData(funcTransDynamoData);
 
-  const ruleTransDynamoData = new events.Rule(scope, 'ruleTransDynamoData' + env, {
-    schedule: events.Schedule.cron({ minute: '0', hour: '1', day: '*', month: '*', year: '*' }), // 毎日午前10時(UTC 1時)に実施
-  });
-  ruleTransDynamoData.addTarget(new targets.LambdaFunction(funcTransDynamoData, {}));
+  /** ■■Lambda(開発環境用のテストハンドラー)■■ */
+  if (!isProduction) {
+    const funcDevelopmentTest = makeLambdaFunc({
+      scope,
+      id: 'DevelopmentTestHandler' + env,
+      codeDirPath: 'lib/lambda',
+      handler: 'developmentTest.handler',
+      environment: lambdaEnvVariables,
+      timeoutSecond: 60,
+      memorySize: 1024,
+    });
+  }
 
 };
 
@@ -107,9 +115,58 @@ const getEnvSettings = () => {
   const obj = { accessKey, secretAccessKey, slackBotToken, slackChannelProdError, slackChannelProdInfo, slackChannelDevError, slackChannelDevInfo, };
 
   Object.values(obj).forEach((v) => {
-    if(!v) throw new Error('設定値が足りません。');
+    if (!v) throw new Error('設定値が足りません。'); // falsyな値がないかチェック。
   });
 
   return obj;
-
 }
+
+type LambdaProp = {
+  scope: cdk.Construct,
+  id: string,
+  codeDirPath: string,
+  handler: string,
+  environment: { [key: string]: string; },
+  timeoutSecond?: number,
+  memorySize?: number,
+  schedule?: {
+    id: string,
+    cron: events.CronOptions,
+  },
+};
+
+/**
+ * Lambda関数を構築する。
+ * @param params.scope lambda.Functionのコンストラクタ第1引数に渡すscope。
+ * @param params.id lambda.Functionのコンストラクタ第2引数に渡すID。このLambda関数を表す一意識別子で、多分同一AWSアカウント内で被らないように設定する。
+ * @param params.codeDirPath lambda関数に渡すコードアセットのディレクトリ。プロジェクトディレクトリからの相対パス。
+ * @param params.handler ハンドラーのファイル名と関数名。
+ * @param params.environment Lambda関数の環境変数。
+ * @param params.timeoutSecond タイムアウト。秒数で指定する。
+ * @param params.memorySize メモリサイズ。
+ * @param params.schedule Cloud Watch Eventで定期実行する場合は指定する。IDは構築するCloud Watch Eventの一意識別子。cronは定期実行のタイミングを表すcron。例：{ minute: '0', hour: '0', day: '*', month: '*', year: '*' }は毎日AM９時(UTC 0時)に定期実行する。
+ * @returns 構築したLambda関数。
+ */
+const makeLambdaFunc = (params: LambdaProp) => {
+  const { scope, id, codeDirPath, handler, environment, timeoutSecond, memorySize, } = params;
+
+  const timeout = (timeoutSecond === undefined) ? undefined : Duration.seconds(timeoutSecond);
+
+  const func = new lambda.Function(scope, id, {
+    runtime: lambda.Runtime.NODEJS_14_X,
+    code: lambda.Code.fromAsset(codeDirPath),
+    handler: handler,
+    environment: environment,
+    timeout: timeout as any,
+    memorySize: memorySize,
+  });
+
+  if (params.schedule) {
+    const rule = new events.Rule(scope, params.schedule.id, {
+      schedule: events.Schedule.cron(params.schedule.cron),
+    });
+    rule.addTarget(new targets.LambdaFunction(func));
+  }
+
+  return func;
+};
