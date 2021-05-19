@@ -4,10 +4,21 @@ import { appLogger } from "../../Common/log";
 import * as crypto from 'crypto';
 import { processEnv } from "../../Common/processEnv";
 
+/**
+ * Bitflyer APIにリクエストを送信する。
+ *
+ * @param params.uri リソースURI。urlBaseで定義した"https://api.bitflyer.com/v1/"以降の文字列。
+ * @param params.method GET, POST等のリクエストメソッド。
+ * @param params.body リクエストボディ
+ * @param params.headers リクエストヘッダ
+ * @param params.queryParams クエリパラメータ
+ * @param isPrivateHTTP PrivateHTTPAPIにアクセスする場合はtrue、そうでない場合はfalse。trueにすると、APIキーを使ってHeaderに認証情報を追加する。
+ * @returns node-fetchのリクエストレスポンス。
+ */
 export const sendRequest = async (params: { uri: string, method?: string, body?: object, headers?: { [key: string]: string }, queryParams?: { [key: string]: string | undefined } }, isPrivateHTTP: boolean) => {
 
   const timestamp = Date.now();
-  const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method || '', params.uri, params.body || {}) : {};
+  const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method || 'GET', '/v1/' + params.uri, params.body) : {};
   const headers = { ...additionalHeaders, ...params.headers };
 
   const { uri, method, body, queryParams } = params;
@@ -19,7 +30,7 @@ export const sendRequest = async (params: { uri: string, method?: string, body?:
     }
     if (queryParamSets.length > 0) url += '?' + queryParamSets.join('&');
   }
-  appLogger.info(`sendRequest: ■url=${url}, ■params=${JSON.stringify(params)}`);
+  appLogger.info(`★★sendRequest: ${JSON.stringify({ params, url, headers, })}`);
 
   const res = await fetch(url, {
     method,
@@ -39,19 +50,21 @@ export const sendRequest = async (params: { uri: string, method?: string, body?:
  * @param path /v1から始まるリクエストパス。「/v1/me/sendchildorder」等。
  * @param body リクエストボディ。
  */
-export const getPrivateApiRequestHeader = (timestamp: number, method: string, path: string, body: Object) => {
+export const getPrivateApiRequestHeader = (timestamp: number, method: string, path: string, body?: Object) => {
 
   const apiKey = processEnv.AKEY;
   const secretAccessKey = processEnv.SKEY;
 
-  const text = timestamp.toString() + method + path + JSON.stringify(body);
+  const text = timestamp.toString() + method + path + (body ? JSON.stringify(body) : '');
   const sign = crypto.createHmac('sha256', secretAccessKey).update(text).digest('hex');
 
-  return {
+  const headers = {
     'ACCESS-KEY': apiKey,
     'ACCESS-TIMESTAMP': timestamp.toString(),
     'ACCESS-SIGN': sign,
     'Content-Type': 'application/json',
   };
+
+  return headers;
 
 };
