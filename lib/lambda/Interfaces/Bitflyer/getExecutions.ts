@@ -38,7 +38,7 @@ export const getExecutions = async (productCode: string, count: number, before?:
         before: before?.toString(),
         after: after?.toString(),
       },
-    });
+    }, false);
     const json = await res.json();
     for (let exec of json) {
       // 日付を文字列からDateへ変換する。
