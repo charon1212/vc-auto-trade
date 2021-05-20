@@ -3,6 +3,7 @@ import { urlBase } from "../../Common/const";
 import { appLogger } from "../../Common/log";
 import * as crypto from 'crypto';
 import { processEnv } from "../../Common/processEnv";
+import handleError from "../../HandleError/handleError";
 
 /**
  * Bitflyer APIにリクエストを送信する。
@@ -17,27 +18,43 @@ import { processEnv } from "../../Common/processEnv";
  */
 export const sendRequest = async (params: { uri: string, method?: string, body?: object, headers?: { [key: string]: string }, queryParams?: { [key: string]: string | undefined } }, isPrivateHTTP: boolean) => {
 
-  const timestamp = Date.now();
-  const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method || 'GET', '/v1/' + params.uri, params.body) : {};
-  const headers = { ...additionalHeaders, ...params.headers };
-
   const { uri, method, body, queryParams } = params;
+  let headers;
   let url = urlBase + uri;
-  if (queryParams) {
-    const queryParamSets: string[] = [];
-    for (let key in queryParams) {
-      if (queryParams[key] !== undefined) queryParamSets.push(key + '=' + queryParams[key]);
-    }
-    if (queryParamSets.length > 0) url += '?' + queryParamSets.join('&');
-  }
-  appLogger.info(`★★sendRequest: ${JSON.stringify({ params, url, headers, })}`);
 
-  const res = await fetch(url, {
-    method,
-    body: JSON.stringify(body),
-    headers,
-  });
-  return res;
+  try {
+
+    // ヘッダー取得処理
+    const timestamp = Date.now();
+    const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method || 'GET', '/v1/' + params.uri, params.body) : {};
+    headers = { ...additionalHeaders, ...params.headers };
+
+    // クエリパラメータをURLに登録
+    if (queryParams) {
+      const queryParamSets: string[] = [];
+      for (let key in queryParams) {
+        if (queryParams[key] !== undefined) queryParamSets.push(key + '=' + queryParams[key]);
+      }
+      if (queryParamSets.length > 0) url += '?' + queryParamSets.join('&');
+    }
+    appLogger.info(`★★sendRequest: ${JSON.stringify({ params, url, headers, })}`);
+
+  } catch (err) {
+    await handleError(__filename, 'sendRequest', 'code', 'リクエスト前処理で失敗', { params, isPrivateHTTP, }, err);
+    return undefined;
+  }
+
+  try {
+    const res = await fetch(url, {
+      method,
+      body: JSON.stringify(body),
+      headers,
+    });
+    return res;
+  } catch (err) {
+    await handleError(__filename, 'sendRequest', 'code', 'API通信でエラー', { params, isPrivateHTTP, }, err);
+    return undefined;
+  }
 
 };
 
