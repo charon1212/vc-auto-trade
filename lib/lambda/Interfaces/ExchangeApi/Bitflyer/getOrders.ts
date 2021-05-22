@@ -55,7 +55,7 @@ export const getOrders = async (productCode: string, params?: GetOrderParams, pa
     appLogger.info(`apiGetData: ${JSON.stringify(json)}`);
     return json as OrderBitflyer[];
   } catch (err) {
-    await handleError(__filename, 'getOrders', 'code', 'API通信でエラー', { productCode, params, pagination, });
+    await handleError(__filename, 'getOrders', 'code', 'API通信でエラー', { productCode, params, pagination, }, err);
     return [];
   }
 
