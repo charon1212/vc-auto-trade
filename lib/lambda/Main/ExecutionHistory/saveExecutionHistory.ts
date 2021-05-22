@@ -1,7 +1,7 @@
-import { ExecutionBitflyer, getExecutions } from "../../Interfaces/ExchangeApi/Bitflyer/getExecutions";
 import { setExecution } from "../../Interfaces/AWS/Dynamodb/execution";
 import { getProductContext } from "../context";
-import { Execution } from "../../Interfaces/DomainType";
+import { Execution, ExecutionAggregated } from "../../Interfaces/DomainType";
+import { getExecutions } from "../../Interfaces/ExchangeApi/getExecutions";
 
 /**
  * 与えられた日時の1分間の約定履歴の情報を、DBに保存する。
@@ -14,63 +14,46 @@ const saveExecutionHistory = async (productCode: string, date: Date) => {
   const productContext = await getProductContext(productCode);
   const lastExecutionId = productContext.lastExecution?.id || undefined;
 
-  let executionList: ExecutionBitflyer[] = [];
-  let before: number | undefined = undefined;
+  // 取引所のAPIから約定履歴を時系列で取得する。
+  const executionList = await getExecutions(timestampByMinute, productCode, lastExecutionId);
 
-  /**
-   * BitflyerのAPIは最大500件の同時取得ができるはずだが、50件くらいを境に多めに取りすぎると、なぜか直近のデータが取得できない。
-   * (例えば、10時にデータを取得しても一番最近のデータが9時半から始まる。その間の約定履歴がないわけではない。)
-   * そこで、ひと手間加える。
-   *
-   * 取得件数は30件に設定し、最大10回取得する。取得するときは、Product Context で記憶したID以降のデータに絞る。
-   * 最初の1回はbefore=undefinedとして直近の30件を取得する。このデータの末尾がtimestampよりも小さい(過去のデータ)であれば、その30件で足りる。
-   * 足りなければ、beforeを設定してもう一度読み取る。
-   */
-  for (let i = 0; i < 10; i++) {
-    // after は lastExecutionId - 1 にしておかないと、1分前のデータが取得できず、取得できなくなるまでAPIリクエストを投げることになる。
-    const res: ExecutionBitflyer[] = await getExecutions(productCode, 30, before, lastExecutionId && lastExecutionId - 1);
-    if (res.length === 0) break;
-    executionList.push(...res);
-    const startExecutionTimestamp = res[res.length - 1].exec_date.getTime();
-    if (startExecutionTimestamp < timestampByMinute) break;
-    before = res[res.length - 1].id;
-  }
+  // 取得した約定履歴を、10秒単位で集約する。
+  const aggregateExecutionList = aggregateExecutions(executionList, timestampByMinute);
 
-  const executionItemList = convertDbData(executionList, timestampByMinute);
-
-  await setExecution(productCode, timestampByMinute.toString(), executionItemList);
+  // 集約した約定履歴をDBに保存する。
+  await setExecution(productCode, timestampByMinute.toString(), aggregateExecutionList);
 
   // product context の last execution id を更新する。
   // 「timestampByMinute + 1分」よりも過去のデータで最新のデータを取得する。
-  const lastDataBeforeTimestamp = executionList.find((item) => (item.exec_date.getTime() < timestampByMinute + 60 * 1000));
+  const lastDataBeforeTimestamp = executionList.find((item) => (item.executionDate.getTime() < timestampByMinute + 60 * 1000));
   if (lastDataBeforeTimestamp) {
     productContext.lastExecution = {
       id: lastDataBeforeTimestamp.id,
-      timestamp: lastDataBeforeTimestamp.exec_date.getTime(),
+      timestamp: lastDataBeforeTimestamp.executionDate.getTime(),
     };
   }
 
 };
 
 /**
- * APIで取得したリストを、DBに保存する形式に変換する。
- * @param list APIから取得したリスト。
+ * APIで取得したリストを10秒ごとに区切って集約する。
+ * @param list 約定のリスト。
  * @param timestamp 保存対象の日時。分の単位で切り捨てたエポック時を指定。
  * @returns DBに保存する形式に変換したリスト。
  */
-const convertDbData = (list: ExecutionBitflyer[], timestamp: number): Execution[] => {
+const aggregateExecutions = (list: Execution[], timestamp: number): ExecutionAggregated[] => {
 
-  const result: Execution[] = [];
+  const result: ExecutionAggregated[] = [];
 
   for (let i = 0; i < 6; i++) { // 10秒ごとに区切る。
     const startTimestamp = timestamp + i * 10 * 1000; // timestamp + i*10秒
     const endTimestamp = startTimestamp + 10 * 1000; // timestamp + (i+1)*10秒
     const targetExecutions = list.filter((exec) => {
-      const t = exec.exec_date.getTime();
+      const t = exec.executionDate.getTime();
       return t >= startTimestamp && t < endTimestamp; // timestamp+i*10秒 <= t < timestamp+(i+1)*10秒 に絞る
     });
 
-    const executionItem: Execution = {
+    const executionItem: ExecutionAggregated = {
       timestamp: startTimestamp,
       price: 0,
       sellSize: 0,
@@ -87,7 +70,6 @@ const convertDbData = (list: ExecutionBitflyer[], timestamp: number): Execution[
 
     if (executionItem.totalSize) executionItem.price = executionItem.price / executionItem.totalSize;
     result.push(executionItem);
-
   }
 
   return result;
