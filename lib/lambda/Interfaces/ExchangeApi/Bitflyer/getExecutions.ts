@@ -1,15 +1,16 @@
 import { appLogger } from '../../../Common/log';
+import { convertStringToDate } from '../../../Common/util';
 import handleError from '../../../HandleError/handleError';
 import { sendRequest } from './apiRequest';
 
 export type ExecutionBitflyer = {
-  id: number,
-  side: 'BUY' | 'SELL' | '',
-  price: number,
-  size: number,
-  exec_date: Date,
-  buy_child_order_acceptance_id: string,
-  sell_child_order_acceptance_id: string,
+  id: number, // 全約定履歴の通し番号
+  side: 'BUY' | 'SELL' | '', // 買い注文と売り注文のどちらで成立したか表す。板寄せで決まると空文字になりうる。
+  price: number, // 約定価格
+  size: number, // 約定量
+  exec_date: Date, // 約定に知事
+  buy_child_order_acceptance_id: string, // 約定の買い注文側の受付ID
+  sell_child_order_acceptance_id: string, // 約定の売り注文側の受付ID
 }
 
 /**
@@ -44,7 +45,7 @@ export const getExecutions = async (productCode: string, count: number, before?:
     const json = await res.json();
     for (let exec of json) {
       // 日付を文字列からDateへ変換する。
-      exec.exec_date = convert(exec.exec_date);
+      exec.exec_date = convertStringToDate(exec.exec_date);
     }
     appLogger.info(`apiGetData: ${JSON.stringify(json)}`);
     return json as ExecutionBitflyer[];
@@ -53,8 +54,4 @@ export const getExecutions = async (productCode: string, count: number, before?:
     return [];
   }
 
-};
-
-const convert = (value: string) => {
-  return new Date(Date.parse(value));
 };

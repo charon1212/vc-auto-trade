@@ -1,5 +1,3 @@
-import { appLogger } from "./log";
-
 type Cron = {
   minute?: CronItem,
   hour?: CronItem,
@@ -37,3 +35,22 @@ const matchCronItem = (targetValue: number, cronItem: CronItem) => {
   }
   return true;
 };
+
+export const convertStringToDate = (value: string) => {
+  return new Date(Date.parse(value));
+};
+
+/**
+ * 指定した値が整数であるかチェックする。
+ * @returns 値がundefinedである、または、値が整数である。
+ */
+export const isInteger = (value?: number) => {
+  return value === undefined || Number.isInteger(value);
+}
+
+export const isAllInteger = (...values: (number | undefined)[]) => {
+  for(let value of values){
+    if(!isInteger(value)) return false;
+  }
+  return true;
+}
