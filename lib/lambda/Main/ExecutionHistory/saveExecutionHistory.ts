@@ -1,4 +1,4 @@
-import { ExecutionBitflyer, getExecutions } from "../../Interfaces/Bitflyer/Api/getExecutions";
+import { ExecutionBitflyer, getExecutions } from "../../Interfaces/ExchangeApi/Bitflyer/getExecutions";
 import { setExecution } from "../../Interfaces/AWS/Dynamodb/execution";
 import { getProductContext } from "../context";
 
