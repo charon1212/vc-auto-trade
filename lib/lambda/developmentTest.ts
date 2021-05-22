@@ -1,4 +1,4 @@
-import { sendRequest } from "./Interfaces/Bitflyer/apiRequest";
+import { sendRequest } from "./Interfaces/Bitflyer/Api/apiRequest";
 
 exports.handler = async function (event: any) {
 
@@ -6,7 +6,7 @@ exports.handler = async function (event: any) {
     uri: 'me/getbalance',
     method: 'GET',
   }, true);
-  const json = await res.json();
+  const json = await res?.json();
   console.log(json);
 
   return '';

@@ -1,5 +1,5 @@
-import { appLogger } from '../../Common/log';
-import handleError from '../../HandleError/handleError';
+import { appLogger } from '../../../Common/log';
+import handleError from '../../../HandleError/handleError';
 import { sendRequest } from './apiRequest';
 
 export type ExecutionBitflyer = {
