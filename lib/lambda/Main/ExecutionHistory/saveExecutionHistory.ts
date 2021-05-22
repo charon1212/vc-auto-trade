@@ -1,14 +1,7 @@
 import { ExecutionBitflyer, getExecutions } from "../../Interfaces/ExchangeApi/Bitflyer/getExecutions";
 import { setExecution } from "../../Interfaces/AWS/Dynamodb/execution";
 import { getProductContext } from "../context";
-
-export type ExecutionItem = {
-  timestamp: number,
-  price: number,
-  sellSize: number,
-  buySize: number,
-  totalSize: number,
-}
+import { Execution } from "../../Interfaces/DomainType";
 
 /**
  * 与えられた日時の1分間の約定履歴の情報を、DBに保存する。
@@ -65,9 +58,9 @@ const saveExecutionHistory = async (productCode: string, date: Date) => {
  * @param timestamp 保存対象の日時。分の単位で切り捨てたエポック時を指定。
  * @returns DBに保存する形式に変換したリスト。
  */
-const convertDbData = (list: ExecutionBitflyer[], timestamp: number): ExecutionItem[] => {
+const convertDbData = (list: ExecutionBitflyer[], timestamp: number): Execution[] => {
 
-  const result: ExecutionItem[] = [];
+  const result: Execution[] = [];
 
   for (let i = 0; i < 6; i++) { // 10秒ごとに区切る。
     const startTimestamp = timestamp + i * 10 * 1000; // timestamp + i*10秒
@@ -77,7 +70,7 @@ const convertDbData = (list: ExecutionBitflyer[], timestamp: number): ExecutionI
       return t >= startTimestamp && t < endTimestamp; // timestamp+i*10秒 <= t < timestamp+(i+1)*10秒 に絞る
     });
 
-    const executionItem: ExecutionItem = {
+    const executionItem: Execution = {
       timestamp: startTimestamp,
       price: 0,
       sellSize: 0,

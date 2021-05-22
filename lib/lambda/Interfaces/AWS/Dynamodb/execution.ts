@@ -1,4 +1,4 @@
-import { ExecutionItem } from "../../../Main/ExecutionHistory/saveExecutionHistory";
+import { Execution } from "../../../Interfaces/DomainType";
 import handleError from "../../../HandleError/handleError";
 import { db } from "./db";
 import { processEnv } from "../../../Common/processEnv";
@@ -10,7 +10,7 @@ const getExecutionClassType = (productCode: string) => {
   return productCode + suffixExecution;
 }
 
-export const setExecution = async (productCode: string, sortKey: string, data: ExecutionItem[]) => {
+export const setExecution = async (productCode: string, sortKey: string, data: Execution[]) => {
 
   appLogger.info(`DynamoDB::setExecution, productCode:${productCode}, sortKey: ${sortKey}, data: ${JSON.stringify(data)}`);
 
@@ -32,7 +32,7 @@ export const setExecution = async (productCode: string, sortKey: string, data: E
 export type ExecutionDynamoDB = {
   ClassType: string,
   SortKey: string,
-  ExecutionList: ExecutionItem[],
+  ExecutionList: Execution[],
 }
 
 /**
