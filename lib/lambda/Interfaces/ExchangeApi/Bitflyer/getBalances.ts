@@ -1,5 +1,6 @@
 import handleError from "../../../HandleError/handleError";
 import { sendRequest } from "./apiRequest";
+import { checkHttpStatus } from "./util";
 
 type BalanceBitflyer = {
   currency_code: string,
@@ -15,7 +16,7 @@ export const getBalances = async () => {
 
   try {
     const res = await sendRequest({ uri: 'me/getbalance', method: 'GET' }, true);
-    if (!res) return [];
+    if (!res || !(await checkHttpStatus(res))) return []; // API通信でエラー、または200系でない。
     const json = await res.json();
     return json as BalanceBitflyer[];
   } catch (err) {

@@ -3,7 +3,7 @@ import { convertStringToDate, isAllInteger, } from "../../../Common/util";
 import handleError from "../../../HandleError/handleError";
 import { sendRequest } from "./apiRequest";
 import { Pagination } from "./type";
-import { convertPaginationToString } from './util';
+import { checkHttpStatus, convertPaginationToString } from './util';
 
 type OrderBitflyer = {
   id: number, // ページング用の通し番号
@@ -54,7 +54,8 @@ export const getOrders = async (productCode: string, params?: GetOrderParams, pa
   try {
     const queryParams = { product_code: productCode, ...params, ...convertPaginationToString(pagination) };
     const res = await sendRequest({ uri: 'me/getchildorders', method: 'GET', queryParams }, true);
-    if (!res) return [];
+    if (!res || !(await checkHttpStatus(res))) return []; // API通信でエラー、または200系でない。
+
     const json = await res.json();
     for (let exec of json) {
       // 日付を文字列からDateへ変換する。
