@@ -21,14 +21,10 @@ export const sendRequest = async (params: { uri: string, method: string, body?: 
 
   const { uri, method, body, queryParams } = params;
   let headers;
-  let url = urlBase + uri;
+  let path = uri;
+  let url = '';
 
   try {
-
-    // ヘッダー取得処理
-    const timestamp = Date.now();
-    const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method || 'GET', '/v1/' + params.uri, params.body) : {};
-    headers = { ...additionalHeaders, ...params.headers };
 
     // クエリパラメータをURLに登録
     if (queryParams) {
@@ -36,8 +32,15 @@ export const sendRequest = async (params: { uri: string, method: string, body?: 
       for (let key in queryParams) {
         if (queryParams[key] !== undefined) queryParamSets.push(key + '=' + queryParams[key]);
       }
-      if (queryParamSets.length > 0) url += '?' + queryParamSets.join('&');
+      if (queryParamSets.length > 0) path += '?' + queryParamSets.join('&');
     }
+    url = urlBase + path;
+
+    // ヘッダー取得処理
+    const timestamp = Date.now();
+    const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method, '/v1/' + path, params.body) : {};
+    headers = { ...additionalHeaders, ...params.headers };
+
     appLogger.info(`★★sendRequest: ${JSON.stringify({ params, url, headers, })}`);
 
   } catch (err) {
