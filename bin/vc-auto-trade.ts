@@ -3,7 +3,9 @@ import 'source-map-support/register';
 import * as cdk from '@aws-cdk/core';
 import { VcAutoTradeStack } from '../lib/vc-auto-trade-stack';
 import { VcAutoTradeStackDev } from '../lib/vc-auto-trade-stack-dev';
+import * as fs from 'fs';
 
+/* ■■■■ログ出力■■■■ */
 const isProductionBuild = process.env.ENV_NAME === 'production';
 if (isProductionBuild) {
   console.log(`****************************************
@@ -15,6 +17,11 @@ CAUTION!!  Production Deploy
   console.log('****Development Deploy****');
 }
 
+/* ■■■■デプロイ記録■■■■ */
+const record = `${isProductionBuild ? 'production' : 'development'} build at :${(new Date()).toISOString()}\r\n`;
+fs.writeFileSync('deployHistory.txt', record, { flag: 'a' });
+
+/* ■■■■デプロイ実施■■■■ */
 const params = {};
 
 const app = new cdk.App();
