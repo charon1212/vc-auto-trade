@@ -29,3 +29,9 @@ export type Order = {
   cancel_size: number, // キャンセルした量
   executed_size: number, // 約定した量
 };
+
+export type Balance = {
+  currencyCode: string, // 通貨の種類を表すコード
+  amount: number, // 総額
+  available: number, // 利用可能額
+};
