@@ -1,14 +1,10 @@
-# Welcome to your CDK TypeScript project!
+# VCAT - Virtual Currency Auto Trade
 
-This is a blank project for TypeScript development with CDK.
+仮想通貨自動取引システム。
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+## 概要
 
-## Useful commands
+大雑把なシステム構成図は下記の通り。
+![システム構成図](docs/img/SystemConfiguration.png)
 
- * `npm run build`   compile typescript to js
- * `npm run watch`   watch for changes and compile
- * `npm run test`    perform the jest unit tests
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk synth`       emits the synthesized CloudFormation template
+他にも、この構成図に載っていないバッチが多数。後でまとめたい…
