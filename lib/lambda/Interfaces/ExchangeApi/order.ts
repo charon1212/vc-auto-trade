@@ -3,6 +3,7 @@ import { Order } from '../DomainType';
 import handleError from "../../HandleError/handleError";
 import { getProductSetting } from "../../Main/productSettings";
 import { sendOrder as sendOrderBitflyer } from "./Bitflyer/sendOrder";
+import { cancelOrder as cancelOrderBitflyer } from './Bitflyer/cancelOrder';
 
 /**
  * 全ての注文の一覧を取得する。
@@ -29,7 +30,7 @@ export const sendOrder = async (productCode: string, orderType: 'LIMIT' | 'MARKE
 
   const productSetting = getProductSetting(productCode);
   if (!productSetting) {
-    await handleError(__filename, 'sendOrder', 'code', 'プロダクトコードが見つかりません。', { productCode, isLimit: orderType, side, price, sizeUnit, });
+    await handleError(__filename, 'sendOrder', 'code', 'プロダクトコードが見つかりません。', { productCode, orderType, side, price, sizeUnit, });
     return undefined;
   }
 
@@ -41,5 +42,23 @@ export const sendOrder = async (productCode: string, orderType: 'LIMIT' | 'MARKE
   });
 
   return result?.child_order_acceptance_id;
+
+};
+
+/**
+ * 注文をキャンセルする。
+ * @param productCode プロダクトコード。
+ * @param orderId 注文ID。
+ * @param orderAcceptanceId 注文受付ID。
+ * @returns 成功時はtrue、失敗時はfalse。
+ */
+export const cancelOrder = async (productCode: string, orderId?: string, orderAcceptanceId?: string) => {
+
+  if (!orderId && !orderAcceptanceId) {
+    await handleError(__filename, 'cancelOrder', 'code', '注文IDか注文受付IDのいずれかは必須です', { productCode, orderId, orderAcceptanceId, });
+    return false;
+  }
+
+  return await cancelOrderBitflyer(productCode, { child_order_id: orderId, child_order_acceptance_id: orderAcceptanceId });
 
 };
