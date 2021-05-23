@@ -16,7 +16,7 @@ import handleError from "../../../HandleError/handleError";
  * @param isPrivateHTTP PrivateHTTPAPIにアクセスする場合はtrue、そうでない場合はfalse。trueにすると、APIキーを使ってHeaderに認証情報を追加する。
  * @returns node-fetchのリクエストレスポンス。
  */
-export const sendRequest = async (params: { uri: string, method?: string, body?: object, headers?: { [key: string]: string }, queryParams?: { [key: string]: string | undefined } }, isPrivateHTTP: boolean) => {
+export const sendRequest = async (params: { uri: string, method: string, body?: object, headers?: { [key: string]: string }, queryParams?: { [key: string]: string | undefined } }, isPrivateHTTP: boolean) => {
 
   const { uri, method, body, queryParams } = params;
   let headers;

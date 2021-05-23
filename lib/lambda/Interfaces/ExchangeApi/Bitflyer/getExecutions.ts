@@ -39,6 +39,7 @@ export const getExecutions = async (productCode: string, count: number, before?:
         before: before?.toString(),
         after: after?.toString(),
       },
+      method: 'GET',
     }, false);
     if (!res) return [];
 

@@ -53,7 +53,7 @@ export const getOrders = async (productCode: string, params?: GetOrderParams, pa
 
   try {
     const queryParams = { product_code: productCode, ...params, ...convertPaginationToString(pagination) };
-    const res = await sendRequest({ uri: 'me/getchildorders', queryParams }, true);
+    const res = await sendRequest({ uri: 'me/getchildorders', method: 'GET', queryParams }, true);
     if (!res) return [];
     const json = await res.json();
     for (let exec of json) {
