@@ -30,7 +30,7 @@ export const sendOrder = async (productCode: string, params: SendOrderParams) =>
 
   try {
     const res = await sendRequest({
-      uri: '/me/sendchildorder',
+      uri: 'me/sendchildorder',
       body: { product_code: productCode, ...params },
       method: 'POST',
     }, true, true);

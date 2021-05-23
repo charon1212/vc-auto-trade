@@ -34,12 +34,11 @@ export const sendOrder = async (productCode: string, orderType: 'LIMIT' | 'MARKE
     return undefined;
   }
 
-  const result = await sendOrderBitflyer(productCode, {
-    child_order_type: orderType,
-    side,
-    size: sizeUnit * productSetting.orderUnit,
-    price
-  });
+  // 丸目誤差の影響で端数が残ることがあり、端数が残るとBitflyerAPIにはじかれる。それを直すため、10桁目で四捨五入する。
+  const base = 1e9;
+  const size = Math.round(sizeUnit * productSetting.orderUnit * base) / base;
+
+  const result = await sendOrderBitflyer(productCode, { child_order_type: orderType, side, size, price });
 
   return result?.child_order_acceptance_id;
 
