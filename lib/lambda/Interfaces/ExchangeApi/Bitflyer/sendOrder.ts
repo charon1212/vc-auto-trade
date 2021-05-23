@@ -1,6 +1,5 @@
 import handleError from "../../../HandleError/handleError";
 import { sendRequest } from "./apiRequest";
-import { checkHttpStatus } from "./util";
 
 type SendOrderParams = {
   child_order_type: 'LIMIT' | 'MARKET', // 指値注文はLIMIT、成行注文はMARKET
@@ -34,8 +33,8 @@ export const sendOrder = async (productCode: string, params: SendOrderParams) =>
       uri: '/me/sendchildorder',
       body: { product_code: productCode, ...params },
       method: 'POST',
-    }, true);
-    if (!res || !(await checkHttpStatus(res))) return undefined; // API通信でエラー、または200系でない。
+    }, true, true);
+    if (!res) return undefined; // API通信でエラー、または200系でない。
     const json = await res.json();
     return json as SendOrderResult;
   } catch (err) {

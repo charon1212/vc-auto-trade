@@ -14,9 +14,10 @@ import handleError from "../../../HandleError/handleError";
  * @param params.headers リクエストヘッダ
  * @param params.queryParams クエリパラメータ
  * @param isPrivateHTTP PrivateHTTPAPIにアクセスする場合はtrue、そうでない場合はfalse。trueにすると、APIキーを使ってHeaderに認証情報を追加する。
+ * @param handleNot2xxStatusAsError 200系以外のHTTPStatusをエラーとして扱う場合はtrue、そうでない場合はfalse。trueにすると、200系以外のステータスが来た場合はundefinedを返す。
  * @returns node-fetchのリクエストレスポンス。
  */
-export const sendRequest = async (params: { uri: string, method: string, body?: object, headers?: { [key: string]: string }, queryParams?: { [key: string]: string | undefined } }, isPrivateHTTP: boolean) => {
+export const sendRequest = async (params: { uri: string, method: string, body?: object, headers?: { [key: string]: string }, queryParams?: { [key: string]: string | undefined } }, isPrivateHTTP: boolean, handleNot2xxStatusAsError: boolean,) => {
 
   const { uri, method, body, queryParams } = params;
   let headers;
@@ -40,7 +41,7 @@ export const sendRequest = async (params: { uri: string, method: string, body?: 
     appLogger.info(`★★sendRequest: ${JSON.stringify({ params, url, headers, })}`);
 
   } catch (err) {
-    await handleError(__filename, 'sendRequest', 'code', 'リクエスト前処理で失敗', { params, isPrivateHTTP, }, err);
+    await handleError(__filename, 'sendRequest', 'code', 'リクエスト前処理で失敗', { params, isPrivateHTTP, handleNot2xxStatusAsError, }, err);
     return undefined;
   }
 
@@ -50,9 +51,21 @@ export const sendRequest = async (params: { uri: string, method: string, body?: 
       body: JSON.stringify(body),
       headers,
     });
+
+    if (handleNot2xxStatusAsError && !res.ok) {
+      let json = '';
+      try { json = await res.json(); } catch (err) { json = 'Bodyの取得に失敗' }; // res.jsonが取れるか不安なので。。。
+
+      const message = `API通信で200系以外の応答。
+■リクエスト情報::${JSON.stringify({ url, headers, params })}
+■レスポンス情報::${JSON.stringify({ status: res.status, body: json })}`;
+      await handleError(__filename, 'sendRequest', 'code', message, { params, isPrivateHTTP, handleNot2xxStatusAsError, },);
+      return undefined;
+    }
+
     return res;
   } catch (err) {
-    await handleError(__filename, 'sendRequest', 'code', 'API通信でエラー', { params, isPrivateHTTP, }, err);
+    await handleError(__filename, 'sendRequest', 'code', 'API通信でエラー', { params, isPrivateHTTP, handleNot2xxStatusAsError, }, err);
     return undefined;
   }
 

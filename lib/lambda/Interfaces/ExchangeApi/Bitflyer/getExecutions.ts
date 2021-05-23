@@ -2,7 +2,6 @@ import { appLogger } from '../../../Common/log';
 import { convertStringToDate } from '../../../Common/util';
 import handleError from '../../../HandleError/handleError';
 import { sendRequest } from './apiRequest';
-import { checkHttpStatus } from './util';
 
 export type ExecutionBitflyer = {
   id: number, // 全約定履歴の通し番号
@@ -41,8 +40,8 @@ export const getExecutions = async (productCode: string, count: number, before?:
         after: after?.toString(),
       },
       method: 'GET',
-    }, false);
-    if (!res || !(await checkHttpStatus(res))) return []; // API通信でエラー、または200系でない。
+    }, false, true);
+    if (!res) return []; // API通信でエラー、または200系でない。
 
     const json = await res.json();
     for (let exec of json) {

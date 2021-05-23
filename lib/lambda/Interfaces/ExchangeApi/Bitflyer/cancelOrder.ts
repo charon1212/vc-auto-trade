@@ -1,6 +1,5 @@
 import handleError from "../../../HandleError/handleError";
 import { sendRequest } from "./apiRequest";
-import { checkHttpStatus } from "./util";
 
 type CancelOrderParams = {
   child_order_id?: string // キャンセルする注文のID。child_order_idかchild_order_acceptance_idのいずれかを指定する。
@@ -23,8 +22,8 @@ export const cancelOrder = async (productCode: string, params: CancelOrderParams
     product_code: productCode,
     ...params
   };
-  const res = await sendRequest({ uri: 'me/cancelchildorder', method: 'POST', body }, true);
-  if (!res || !(await checkHttpStatus(res))) return false; // API通信でエラー、または200系でない。
+  const res = await sendRequest({ uri: 'me/cancelchildorder', method: 'POST', body }, true, true);
+  if (!res) return false; // API通信でエラー、または200系でない。
   return true;
 
 };
