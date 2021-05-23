@@ -1,6 +1,20 @@
+import { getOrders } from "./Bitflyer/getOrders";
+import { Order } from '../DomainType';
 import handleError from "../../HandleError/handleError";
 import { getProductSetting } from "../../Main/productSettings";
 import { sendOrder as sendOrderBitflyer } from "./Bitflyer/sendOrder";
+
+/**
+ * 全ての注文の一覧を取得する。
+ * @param productCode プロダクトコード。
+ * @returns 注文の一覧。
+ */
+export const getAllOrders = async (productCode: string): Promise<Order[]> => {
+
+  const orders = await getOrders(productCode);
+  return orders;
+
+};
 
 /**
  * 注文を行う。
