@@ -10,5 +10,6 @@ cdk.out
 # 個人で作成
 package-lock.json
 .env
+docs/ignore/
 ## デプロイ履歴
 deployHistory.txt
