@@ -57,7 +57,6 @@ export const sendRequest = async (params: { uri: string, method: string, body?: 
       try { json = await res.json(); } catch (err) { json = 'Bodyの取得に失敗' }; // res.jsonが取れるか不安なので。。。
 
       const message = `API通信で200系以外の応答。
-■リクエスト情報::${JSON.stringify({ url, headers, params })}
 ■レスポンス情報::${JSON.stringify({ status: res.status, body: json })}`;
       await handleError(__filename, 'sendRequest', 'code', message, { params, isPrivateHTTP, handleNot2xxStatusAsError, },);
       return undefined;
