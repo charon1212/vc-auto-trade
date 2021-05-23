@@ -25,12 +25,20 @@ type OrderBitflyer = {
 };
 
 type GetOrderParams = {
-  child_order_state?: string,
-  child_order_id?: string,
-  child_order_acceptance_id?: string,
-  parent_order_id?: string,
+  child_order_state?: string, // child_order_state がその値に一致する注文のみを返す。
+  child_order_id?: string, // 指定した ID に一致する注文を取得
+  child_order_acceptance_id?: string, // 指定した ID に一致する注文を取得
+  parent_order_id?: string, // 指定された場合、その親注文に関連付けられている注文の一覧を取得
 };
 
+/**
+ * 注文の一覧を取得する
+ * @param productCode プロダクトコード
+ * @param params クエリパラメータ。詳細は型定義を参照。
+ * @param pagination ページング用パラメータ。
+ * @returns 注文のリスト。プロパティの意味は型定義を参照。
+ * @remarks こちらも参照：https://lightning.bitflyer.com/docs?lang=ja#注文の一覧を取得
+ */
 export const getOrders = async (productCode: string, params?: GetOrderParams, pagination?: Pagination,) => {
 
   // 整数チェック
