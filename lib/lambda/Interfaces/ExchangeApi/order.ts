@@ -13,7 +13,21 @@ import { cancelOrder as cancelOrderBitflyer } from './Bitflyer/cancelOrder';
 export const getAllOrders = async (productCode: string): Promise<Order[]> => {
 
   const orders = await getOrders(productCode);
-  return orders;
+  return orders.map((order) => ({
+    id: order.id,
+    side: order.side,
+    childOrderType: order.child_order_type,
+    price: order.price,
+    averagePrice: order.average_price,
+    size: order.size,
+    state: order.child_order_state,
+    expireDate: order.expire_date,
+    orderDate: order.child_order_date,
+    acceptanceId: order.child_order_acceptance_id,
+    outstandingSize: order.outstanding_size,
+    cancelSize: order.cancel_size,
+    executedSize: order.executed_size,
+  }));
 
 };
 
