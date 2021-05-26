@@ -28,7 +28,7 @@ export const importProductContextFromDb = async () => {
  * @param productCode productSettingsで定義したプロダクトコード。
  * @returns Product Context
  */
-export const getProductContext = async (productCode: string): Promise<VCATProductContext> => {
+export const getProductContext = async (productCode: string): Promise<VCATProductContext | undefined> => {
 
   if (!productContextList) return {};
   const productContext = productContextList.find((item) => (item.productCode === productCode))?.context;
@@ -36,7 +36,7 @@ export const getProductContext = async (productCode: string): Promise<VCATProduc
     return productContext
   } else {
     await handleError(__filename, 'getProductContext', 'code', 'ProductContextの取得に失敗。', { productCode });
-    return {};
+    return undefined;
   }
 
 };

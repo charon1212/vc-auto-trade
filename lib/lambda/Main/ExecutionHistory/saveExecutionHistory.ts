@@ -12,7 +12,7 @@ const saveExecutionHistory = async (productCode: string, date: Date) => {
 
   const timestampByMinute = Math.floor(date.getTime() / (60 * 1000)) * 60 * 1000;
   const productContext = await getProductContext(productCode);
-  const lastExecutionId = productContext.lastExecution?.id || undefined;
+  const lastExecutionId = productContext?.lastExecution?.id || undefined;
 
   // 取引所のAPIから約定履歴を時系列で取得する。
   const executionList = await getExecutions(timestampByMinute, productCode, lastExecutionId);
@@ -26,7 +26,7 @@ const saveExecutionHistory = async (productCode: string, date: Date) => {
   // product context の last execution id を更新する。
   // 「timestampByMinute + 1分」よりも過去のデータで最新のデータを取得する。
   const lastDataBeforeTimestamp = executionList.find((item) => (item.executionDate.getTime() < timestampByMinute + 60 * 1000));
-  if (lastDataBeforeTimestamp) {
+  if (lastDataBeforeTimestamp && productContext) {
     productContext.lastExecution = {
       id: lastDataBeforeTimestamp.id,
       timestamp: lastDataBeforeTimestamp.executionDate.getTime(),
