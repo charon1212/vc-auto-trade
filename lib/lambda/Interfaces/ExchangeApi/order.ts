@@ -1,4 +1,4 @@
-import { getOrders } from "./Bitflyer/getOrders";
+import { getOrders, OrderBitflyer } from "./Bitflyer/getOrders";
 import { Order } from '../DomainType';
 import handleError from "../../HandleError/handleError";
 import { getProductSetting } from "../../Main/productSettings";
@@ -13,7 +13,15 @@ import { cancelOrder as cancelOrderBitflyer } from './Bitflyer/cancelOrder';
 export const getAllOrders = async (productCode: string): Promise<Order[]> => {
 
   const orders = await getOrders(productCode);
-  return orders.map((order) => ({
+  return orders.map((order) => convertOrder(order));
+
+};
+
+/**
+ * BitflyerのOrderをDomainTypeのOrderに変換する。
+ */
+const convertOrder = (order: OrderBitflyer): Order => {
+  return {
     id: order.id,
     side: order.side,
     childOrderType: order.child_order_type,
@@ -27,8 +35,20 @@ export const getAllOrders = async (productCode: string): Promise<Order[]> => {
     outstandingSize: order.outstanding_size,
     cancelSize: order.cancel_size,
     executedSize: order.executed_size,
-  }));
+  };
+}
 
+type OrderStateExchangeApi = 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTED' | 'COMPLETED'
+
+/**
+ * 特定の状態の注文の一覧を取得する。
+ * @param productCode プロダクトコード。
+ * @param state 検索対象の状態。
+ * @returns 注文の一覧。
+ */
+export const getStateOrders = async (productCode: string, state: OrderStateExchangeApi): Promise<Order[]> => {
+  const orders = await getOrders(productCode, { child_order_state: state });
+  return orders.map((order) => convertOrder(order));
 };
 
 /**
