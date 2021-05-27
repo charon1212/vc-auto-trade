@@ -61,19 +61,9 @@ export const setOrder = async (productCode: string, timestamp: number, data: Ord
   }
   const sortKey = getStateCode(data.state) + timestamp.toString();
   const convertedData: OrderTimestamp = {
-    id: data.id,
-    side: data.side,
-    childOrderType: data.childOrderType,
-    price: data.price,
-    averagePrice: data.averagePrice,
-    size: data.size,
-    state: data.state,
+    ...data,
     expireDateTimestamp: data.expireDate.getTime(),
     orderDateTimestamp: data.orderDate.getTime(),
-    acceptanceId: data.acceptanceId,
-    outstandingSize: data.outstandingSize,
-    cancelSize: data.cancelSize,
-    executedSize: data.executedSize,
   }
 
   try {
@@ -101,7 +91,7 @@ export const searchOrders = async (productCode: string, state: OrderState,) => {
   const stateCode = getStateCode(state);
   if (!stateCode) {
     await handleError(__filename, 'setOrder', 'code', 'stateCodeが取得できませんでした。', { productCode, state, },);
-    return;
+    return { count: 0, result: [] };
   }
 
   try {
@@ -124,11 +114,15 @@ export const searchOrders = async (productCode: string, state: OrderState,) => {
       result: resultItem?.map((item): OrderDynamoDB => ({
         ClassType: item.ClassType,
         SortKey: item.SortKey,
-        data: { ...item.data, expireDate: (new Date(item.data.expireDateTimestamp)), orderDate: (new Date(item.data.orderDateTimestamp)), },
+        data: {
+          ...item.data,
+          expireDate: (new Date(item.data.expireDateTimestamp)),
+          orderDate: (new Date(item.data.orderDateTimestamp)),
+        },
       })),
     };
   } catch (err) {
     await handleError(__filename, 'searchOrders', 'code', 'DBの検索に失敗。', { productCode, state, }, err);
-    return;
+    return { count: 0, result: [] };
   }
 };

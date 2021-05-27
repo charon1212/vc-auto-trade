@@ -59,7 +59,7 @@ export const searchLongExecutions = async (productCode: string, sortKeyStart: st
     appLogger.info(`DynamoDB::searchLongExecutions, productCode:${productCode}, result: ${JSON.stringify(res)}`);
     return {
       count: res.Count,
-      result: res.Items as LongExecutionDynamoDB[],
+      result: res.Items as LongExecutionDynamoDB[] | undefined,
     };
   } catch (err) {
     await handleError(__filename, 'searchLongExecutions', 'code', 'DBの検索に失敗。', { productCode, sortKeyStart, sotrKeyEnd, }, err);

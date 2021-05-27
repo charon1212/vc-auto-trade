@@ -5,7 +5,7 @@ import { sendRequest } from "./apiRequest";
 import { Pagination } from "./type";
 import { convertPaginationToString, } from './util';
 
-type OrderBitflyer = {
+export type OrderBitflyer = {
   id: number, // ページング用の通し番号
   child_order_id: string, // 注文の一意なID
   product_code: string, // 注文の対象暗号通貨を表す製品コード
@@ -24,7 +24,7 @@ type OrderBitflyer = {
   total_commission: number, // ?
 };
 
-type GetOrderParams = {
+export type GetOrderParams = {
   child_order_state?: string, // child_order_state がその値に一致する注文のみを返す。
   child_order_id?: string, // 指定した ID に一致する注文を取得
   child_order_acceptance_id?: string, // 指定した ID に一致する注文を取得
