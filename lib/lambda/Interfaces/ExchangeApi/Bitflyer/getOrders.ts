@@ -5,6 +5,7 @@ import { sendRequest } from "./apiRequest";
 import { Pagination } from "./type";
 import { convertPaginationToString, } from './util';
 
+export type OrderStateBitflyer = 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTED' | 'COMPLETED';
 export type OrderBitflyer = {
   id: number, // ページング用の通し番号
   child_order_id: string, // 注文の一意なID
@@ -14,7 +15,7 @@ export type OrderBitflyer = {
   price?: number, // 指値の対象価格
   average_price: number, // 約定価格？
   size: number, // 取引量
-  child_order_state: 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTED' | 'COMPLETED', // 注文の状態。
+  child_order_state: OrderStateBitflyer, // 注文の状態。
   expire_date: Date, // 有効期限
   child_order_date: Date, // 注文を発行した日時？
   child_order_acceptance_id: string, // 注文受付ID
@@ -25,7 +26,7 @@ export type OrderBitflyer = {
 };
 
 export type GetOrderParams = {
-  child_order_state?: string, // child_order_state がその値に一致する注文のみを返す。
+  child_order_state?: OrderStateBitflyer, // child_order_state がその値に一致する注文のみを返す。
   child_order_id?: string, // 指定した ID に一致する注文を取得
   child_order_acceptance_id?: string, // 指定した ID に一致する注文を取得
   parent_order_id?: string, // 指定された場合、その親注文に関連付けられている注文の一覧を取得
@@ -60,6 +61,7 @@ export const getOrders = async (productCode: string, params?: GetOrderParams, pa
     for (let exec of json) {
       // 日付を文字列からDateへ変換する。
       exec.exec_date = convertStringToDate(exec.exec_date);
+      exec.child_order_date = convertStringToDate(exec.child_order_date);
     }
     appLogger.info(`apiGetData: ${JSON.stringify(json)}`);
     return json as OrderBitflyer[];
