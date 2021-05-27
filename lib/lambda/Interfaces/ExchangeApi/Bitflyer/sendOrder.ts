@@ -38,7 +38,7 @@ export const sendOrder = async (productCode: string, params: SendOrderParams) =>
     const json = await res.json();
     return json as SendOrderResult;
   } catch (err) {
-    await handleError(__filename, 'getOrders', 'code', 'API通信でエラー', { productCode, params, }, err);
+    await handleError(__filename, 'sendOrder', 'code', 'API通信でエラー', { productCode, params, }, err);
     return undefined;
   }
 
