@@ -24,9 +24,11 @@ export type Execution = {
  * 自分が発注した注文情報。
  */
 export type Order = {
+  sort: 'NORMAL' | 'PARENT',
   id: number, // ページング用の通し番号
   side: 'BUY' | 'SELL', // 売り注文・買い注文
-  childOrderType: 'LIMIT' | 'MARKET', // 指値・成行
+  orderType?: 'LIMIT' | 'MARKET', // 指値・成行
+  parentOrderType?: ParentOrderType,
   price?: number, // 指値の対象価格
   averagePrice: number, // 約定価格？
   size: number, // 取引量
@@ -40,6 +42,7 @@ export type Order = {
 };
 
 export type OrderState = 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTED' | 'COMPLETED' | 'UNKNOWN';
+export type ParentOrderType = 'LIMIT' | 'MARKET' | 'STOP' | 'STOP_LIMIT' | 'TRAIL' | 'IFD' | 'OCO' | 'IFDOCO';
 
 /**
  * ある通貨(JPYやBTC)に関する資産残高。

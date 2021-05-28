@@ -23,9 +23,11 @@ const getStateCode = (state: string) => {
 };
 
 type OrderTimestamp = {
+  sort: 'NORMAL' | 'PARENT',
   id: number,
   side: 'BUY' | 'SELL',
-  childOrderType: 'LIMIT' | 'MARKET',
+  orderType?: 'LIMIT' | 'MARKET',
+  parentOrderType?: 'LIMIT' | 'MARKET' | 'STOP' | 'STOP_LIMIT' | 'TRAIL' | 'IFD' | 'OCO' | 'IFDOCO',
   price?: number,
   averagePrice: number,
   size: number,

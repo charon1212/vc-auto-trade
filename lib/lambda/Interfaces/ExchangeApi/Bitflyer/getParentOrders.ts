@@ -6,13 +6,14 @@ import { sendRequest } from "./apiRequest";
 import { appLogger } from "../../../Common/log";
 
 export type ParentOrderStateBitflyer = 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTED' | 'COMPLETED';
+export type ParentOrderTypeBitflyer = 'LIMIT' | 'MARKET' | 'STOP' | 'STOP_LIMIT' | 'TRAIL' | 'IFD' | 'OCO' | 'IFDOCO';
 
 export type ParentOrderBitflyer = {
   id: number, // ページング用の通し番号
   parent_order_id: string, // 注文の一意なID
   product_code: string, // 注文の対象暗号通貨を表す製品コード
   side: 'BUY' | 'SELL', // 売り注文・買い注文
-  parent_order_type: 'LIMIT' | 'MARKET', // 指値・成行
+  parent_order_type: ParentOrderTypeBitflyer,
   price?: number, // 指値の対象価格
   average_price: number, // 約定価格？
   size: number, // 取引量

@@ -22,9 +22,10 @@ export const getAllOrders = async (productCode: string): Promise<Order[]> => {
  */
 const convertOrder = (order: OrderBitflyer): Order => {
   return {
+    sort: "NORMAL",
     id: order.id,
     side: order.side,
-    childOrderType: order.child_order_type,
+    orderType: order.child_order_type,
     price: order.price,
     averagePrice: order.average_price,
     size: order.size,
@@ -38,7 +39,7 @@ const convertOrder = (order: OrderBitflyer): Order => {
   };
 }
 
-type OrderStateExchangeApi = 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTED' | 'COMPLETED'
+export type OrderStateExchangeApi = 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTED' | 'COMPLETED'
 
 /**
  * 特定の状態の注文の一覧を取得する。
