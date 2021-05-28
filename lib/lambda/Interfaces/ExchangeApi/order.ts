@@ -62,15 +62,8 @@ export const getStateOrders = async (productCode: string, state: OrderStateExcha
  */
 export const sendOrder = async (productCode: string, orderType: 'LIMIT' | 'MARKET', side: 'BUY' | 'SELL', sizeUnit: number, price?: number) => {
 
-  const productSetting = getProductSetting(productCode);
-  if (!productSetting) {
-    await handleError(__filename, 'sendOrder', 'code', 'プロダクトコードが見つかりません。', { productCode, orderType, side, price, sizeUnit, });
-    return undefined;
-  }
-
-  // 丸目誤差の影響で端数が残ることがあり、端数が残るとBitflyerAPIにはじかれる。それを直すため、10桁目で四捨五入する。
-  const base = 1e9;
-  const size = Math.round(sizeUnit * productSetting.orderUnit * base) / base;
+  const size = await getOrderSize(productCode, sizeUnit);
+  if (!size) return undefined;
 
   const result = await sendOrderBitflyer(productCode, { child_order_type: orderType, side, size, price });
 
@@ -93,5 +86,27 @@ export const cancelOrder = async (productCode: string, orderId?: string, orderAc
   }
 
   return await cancelOrderBitflyer(productCode, { child_order_id: orderId, child_order_acceptance_id: orderAcceptanceId });
+
+};
+
+/**
+ * 実際の注文数量を取得する。
+ *
+ * @param productCode プロダクトコード。
+ * @param sizeByUnit 最小単位を単位とした注文数量。正の整数で指定する。
+ * @returns 最小単位の整数倍で表した注文数量。
+ */
+export const getOrderSize = async (productCode: string, sizeByUnit: number) => {
+
+  const productSetting = getProductSetting(productCode);
+  if (!productSetting) {
+    await handleError(__filename, 'getOrderSize', 'code', 'プロダクトコードが見つかりません。', { productCode, sizeByUnit, });
+    return undefined;
+  }
+
+  // 丸目誤差の影響で端数が残ることがあり、端数が残るとBitflyerAPIにはじかれる。それを直すため、10桁目で四捨五入する。
+  const base = 1e9;
+  const size = Math.round(sizeByUnit * productSetting.orderUnit * base) / base;
+  return size;
 
 };
