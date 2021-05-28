@@ -7,8 +7,8 @@ export type ChildOrderConditionType = 'LIMIT' | 'MARKET' | 'STOP' | 'STOP_LIMIT'
 
 export type SendParentOrderParams = {
   order_method: ParentOrderMethodBitflyer, // 注文方法
-  minute_to_expire: number, // 有効期限(分単位)。省略した場合は43200(30日間)
-  time_in_force: ParentOrderTimeInForce, // 執行数量条件
+  minute_to_expire?: number, // 有効期限(分単位)。省略した場合は43200(30日間)
+  time_in_force?: ParentOrderTimeInForce, // 執行数量条件
   parameters: { // SIMPLE→1個、 IFD,OCO→2個、 IFDOCO→3個必要
     product_code: string, // プロダクトコード
     condition_type: ChildOrderConditionType, // 執行条件
