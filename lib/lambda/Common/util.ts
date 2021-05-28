@@ -49,8 +49,14 @@ export const isInteger = (value?: number) => {
 }
 
 export const isAllInteger = (...values: (number | undefined)[]) => {
-  for(let value of values){
-    if(!isInteger(value)) return false;
+  for (let value of values) {
+    if (!isInteger(value)) return false;
   }
   return true;
 }
+
+export const asyncExecution = async (...executions: (() => Promise<void>)[]) => {
+  const promiseList: Promise<void>[] = [];
+  for (let execution of executions) promiseList.push(execution());
+  return await Promise.all(promiseList);
+};
