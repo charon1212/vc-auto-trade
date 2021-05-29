@@ -34,8 +34,8 @@ export type OrderState = 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTED' | 'COMPL
  * - 優先順位を「 ACTIVE > UNKNOWN > REJECTED > COMPLETED > CANCELED > EXPIRED」とし、この順にchildOrderListの中で存在するstateを選択する。
  */
 export type Order = {
-  id: number, // ページング用の通し番号
-  orderId: string, // 注文ID
+  id?: number, // ページング用の通し番号
+  orderId?: string, // 注文ID
   acceptanceId: string, // ★注文受付ID
 
   parentSortMethod?: ParentOrderMethod, // ★注文方法。NORMALは通常注文、それ以外は特殊注文。
@@ -51,10 +51,10 @@ export type Order = {
     trrigerPrice?: number, // ★トリガー価格。orderTypeがSTOP, STOP_LIMITの場合に必須。
     offset?: number, // ★トレール幅。orderTypeがTRAILの場合に必須。
     averagePrice?: number, // 平均取引価格。
-    state: OrderState, // 注文の状態
-    outstandingSize: number, // 未約定の量
-    cancelSize: number, // キャンセルした量
-    executedSize: number, // 約定した量
+    state?: OrderState, // 注文の状態
+    outstandingSize?: number, // 未約定の量
+    cancelSize?: number, // キャンセルした量
+    executedSize?: number, // 約定した量
   }[],
 };
 
