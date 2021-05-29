@@ -38,7 +38,7 @@ export type Order = {
   orderId?: string, // 注文ID
   acceptanceId: string, // ★注文受付ID
 
-  parentSortMethod?: ParentOrderMethod, // ★注文方法。NORMALは通常注文、それ以外は特殊注文。
+  parentSortMethod: ParentOrderMethod, // ★注文方法。NORMALは通常注文、それ以外は特殊注文。
   orderDate: Date, // ★発注日時
 
   state: OrderState, // 注文の状態。通常注文の場合はchildOrderList[0].stateと同じ。特殊注文の場合は、ドキュメントコメントに記載のロジックで決定する。
@@ -48,10 +48,10 @@ export type Order = {
     side: OrderSide, // ★売り注文・買い注文
     size: number, // ★注文数量
     price?: number, // ★指値。orderTypeがLIMIT, STOP_LIMITの場合に必須。
-    trrigerPrice?: number, // ★トリガー価格。orderTypeがSTOP, STOP_LIMITの場合に必須。
+    triggerPrice?: number, // ★トリガー価格。orderTypeがSTOP, STOP_LIMITの場合に必須。
     offset?: number, // ★トレール幅。orderTypeがTRAILの場合に必須。
     averagePrice?: number, // 平均取引価格。
-    state?: OrderState, // 注文の状態
+    state: OrderState, // 注文の状態
     outstandingSize?: number, // 未約定の量
     cancelSize?: number, // キャンセルした量
     executedSize?: number, // 約定した量
