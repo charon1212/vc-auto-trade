@@ -1,16 +1,27 @@
 import { getOrders, OrderBitflyer } from "./Bitflyer/getOrders";
-import { Order } from '../DomainType';
+import { Order, OrderState } from '../DomainType';
 import handleError from "../../HandleError/handleError";
 import { getProductSetting } from "../../Main/productSettings";
 import { sendOrder as sendOrderBitflyer } from "./Bitflyer/sendOrder";
 import { cancelOrder as cancelOrderBitflyer } from './Bitflyer/cancelOrder';
+
+export type GetChildOrderResult = {
+  id: number,
+  orderId: string,
+  acceptanceId: string,
+  averagePrice?: number,
+  state: OrderState,
+  outstandingSize: number,
+  cancelSize: number,
+  executedSize: number,
+};
 
 /**
  * 全ての注文の一覧を取得する。
  * @param productCode プロダクトコード。
  * @returns 注文の一覧。
  */
-export const getAllOrders = async (productCode: string): Promise<Order[]> => {
+export const getAllOrders = async (productCode: string): Promise<GetChildOrderResult[]> => {
 
   const orders = await getOrders(productCode);
   return orders.map((order) => convertOrder(order));
@@ -18,21 +29,15 @@ export const getAllOrders = async (productCode: string): Promise<Order[]> => {
 };
 
 /**
- * BitflyerのOrderをDomainTypeのOrderに変換する。
+ * BitflyerのOrderをGetChildOrderResultに変換する。
  */
-const convertOrder = (order: OrderBitflyer): Order => {
+const convertOrder = (order: OrderBitflyer): GetChildOrderResult => {
   return {
-    sort: "NORMAL",
     id: order.id,
-    side: order.side,
-    orderType: order.child_order_type,
-    price: order.price,
-    averagePrice: order.average_price,
-    size: order.size,
-    state: order.child_order_state,
-    expireDate: order.expire_date,
-    orderDate: order.child_order_date,
+    orderId: order.child_order_id,
     acceptanceId: order.child_order_acceptance_id,
+    averagePrice: order.average_price,
+    state: order.child_order_state,
     outstandingSize: order.outstanding_size,
     cancelSize: order.cancel_size,
     executedSize: order.executed_size,
@@ -47,8 +52,13 @@ export type OrderStateExchangeApi = 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTE
  * @param state 検索対象の状態。
  * @returns 注文の一覧。
  */
-export const getStateOrders = async (productCode: string, state: OrderStateExchangeApi): Promise<Order[]> => {
+export const getStateOrders = async (productCode: string, state: OrderStateExchangeApi): Promise<GetChildOrderResult[]> => {
   const orders = await getOrders(productCode, { child_order_state: state });
+  return orders.map((order) => convertOrder(order));
+};
+
+export const getRelatedChildOrders = async (productCode: string, parentOrderId: string,): Promise<GetChildOrderResult[]> => {
+  const orders = await getOrders(productCode, { parent_order_id: parentOrderId });
   return orders.map((order) => convertOrder(order));
 };
 

@@ -18,26 +18,13 @@ const stateMap = [
   { state: 'CANCELED', stateCode: 'CAN' },
   { state: 'EXPIRED', stateCode: 'EXP' },
 ];
-const getStateCode = (state: string) => {
+const getStateCode = (state: OrderState) => {
   return stateMap.find((item) => item.state === state)?.stateCode;
 };
 
-type OrderTimestamp = {
-  sort: 'NORMAL' | 'PARENT',
-  id: number,
-  side: 'BUY' | 'SELL',
-  orderType?: 'LIMIT' | 'MARKET',
-  parentOrderType?: 'LIMIT' | 'MARKET' | 'STOP' | 'STOP_LIMIT' | 'TRAIL' | 'IFD' | 'OCO' | 'IFDOCO',
-  price?: number,
-  averagePrice: number,
-  size: number,
-  state: OrderState,
-  expireDateTimestamp: number,
+/** 保存用のOrder。日付型は文字列で保存されてしまうため、別途Unix Timestampを保存する。 */
+type OrderSave = Order & {
   orderDateTimestamp: number,
-  acceptanceId: string,
-  outstandingSize: number,
-  cancelSize: number,
-  executedSize: number,
 };
 
 export type OrderDynamoDB = {
@@ -62,9 +49,8 @@ export const setOrder = async (productCode: string, timestamp: number, data: Ord
     return;
   }
   const sortKey = getStateCode(data.state) + timestamp.toString();
-  const convertedData: OrderTimestamp = {
+  const convertedData: OrderSave = {
     ...data,
-    expireDateTimestamp: data.expireDate.getTime(),
     orderDateTimestamp: data.orderDate.getTime(),
   }
 
@@ -110,7 +96,7 @@ export const searchOrders = async (productCode: string, state: OrderState,) => {
       },
     }).promise();
     appLogger.info(`DynamoDB::searchOrders, productCode:${productCode}, result: ${JSON.stringify(res)}`);
-    const resultItem = res.Items as { ClassType: string, SortKey: string, data: OrderTimestamp, }[] | undefined;
+    const resultItem = res.Items as { ClassType: string, SortKey: string, data: OrderSave, }[] | undefined;
     return {
       count: res.Count,
       result: resultItem?.map((item): OrderDynamoDB => ({
@@ -118,7 +104,6 @@ export const searchOrders = async (productCode: string, state: OrderState,) => {
         SortKey: item.SortKey,
         data: {
           ...item.data,
-          expireDate: (new Date(item.data.expireDateTimestamp)),
           orderDate: (new Date(item.data.orderDateTimestamp)),
         },
       })),

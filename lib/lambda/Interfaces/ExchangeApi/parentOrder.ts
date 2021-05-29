@@ -2,7 +2,9 @@ import { sendParentOrder } from "./Bitflyer/sendParentOrder";
 import { getOrderSize, OrderStateExchangeApi } from "./order";
 import { cancelParentOrder as cancelParentOrderBitflyer } from './Bitflyer/cancelParentOrder';
 import { getParentOrders as getParentOrdersBitflyer, ParentOrderBitflyer } from './Bitflyer/getParentOrders';
-import { Order } from "../DomainType";
+import { Order, OrderSide, OrderState, OrderType } from "../DomainType";
+import { getParentOrderDetail } from "./Bitflyer/getParentOrderDetail";
+import { getOrders } from "./Bitflyer/getOrders";
 
 export type ChildOrder = {
   conditionType: ConditionType,
@@ -126,40 +128,57 @@ export const cancelParentOrder = async (productCode: string, parentOrderId?: str
   });
 };
 
-export type ParentOrderState = '';
+export type GetParentOrderResult = {
+  id: number,
+  orderId: string,
+  acceptanceId: string,
+  state: OrderState,
+  children: {
+    side: OrderSide,
+    size: number,
+    price?: number,
+    orderId: string,
+    averagePrice?: number,
+    state: OrderState,
+    outstandingSize: number,
+    cancelSize: number,
+    executedSize: number,
+  }[],
+};
 
-/**
- * 親注文の一覧を取得する。
- * @param productCode プロダクトコード。
- * @param state 検索する状態。指定しなければすべて取得する。
- * @returns 親注文の一覧。
- */
-export const getParentOrders = async (productCode: string, state?: OrderStateExchangeApi) => {
+export const getParentOrder = async (productCode: string, acceptanceId: string): Promise<GetParentOrderResult | undefined> => {
 
-  const orders = await getParentOrdersBitflyer(productCode, { parent_order_state: state });
-  return orders.map((value) => convertOrder(value));
+
+  const parentOrderDetail = await getParentOrderDetail(productCode, { parent_order_acceptance_id: acceptanceId });
+  if (!parentOrderDetail) return undefined;
+  const childOrders = await getOrders(productCode, { parent_order_id: parentOrderDetail?.parent_order_id });
+  const childOrderStateList = childOrders.map((value) => value.child_order_state);
+  return {
+    id: parentOrderDetail.id,
+    orderId: parentOrderDetail.parent_order_id,
+    acceptanceId: parentOrderDetail.parent_order_acceptance_id,
+    state: decideParentOrderState(childOrderStateList),
+    children: childOrders.map((childOrder) => ({
+      side: childOrder.side,
+      size: childOrder.size,
+      price: childOrder.price,
+      orderId: childOrder.child_order_id,
+      averagePrice: childOrder.average_price,
+      state: childOrder.child_order_state,
+      outstandingSize: childOrder.outstanding_size,
+      cancelSize: childOrder.cancel_size,
+      executedSize: childOrder.executed_size,
+    })),
+  };
 
 };
 
+const decideParentOrderState = (childOrderStateList: OrderState[]): OrderState => {
 
-/**
- * BitflyerのParentOrderをDomainTypeのOrderに変換する。
- */
-const convertOrder = (order: ParentOrderBitflyer): Order => {
-  return {
-    sort: "PARENT",
-    id: order.id,
-    side: order.side,
-    parentOrderType: order.parent_order_type,
-    price: order.price,
-    averagePrice: order.average_price,
-    size: order.size,
-    state: order.parent_order_state,
-    expireDate: order.expire_date,
-    orderDate: order.parent_order_date,
-    acceptanceId: order.parent_order_acceptance_id,
-    outstandingSize: order.outstanding_size,
-    cancelSize: order.cancel_size,
-    executedSize: order.executed_size,
-  };
-}
+  const stateList: OrderState[] = ['ACTIVE', 'UNKNOWN', 'REJECTED', 'COMPLETED', 'CANCELED', 'EXPIRED'];
+  for (let state of stateList) {
+    if (childOrderStateList.includes(state)) return state;
+  }
+  return 'UNKNOWN'; // stateListが空の場合。
+
+};
