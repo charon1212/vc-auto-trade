@@ -57,6 +57,12 @@ export const getStateOrders = async (productCode: string, state: OrderStateExcha
   return orders.map((order) => convertOrder(order));
 };
 
+/**
+ * 特定の親注文に関連する子注文の一覧を取得する。
+ * @param productCode プロダクトコード。
+ * @param parentOrderId 親注文の注文ID。
+ * @returns 関連する子注文の一覧。
+ */
 export const getRelatedChildOrders = async (productCode: string, parentOrderId: string,): Promise<GetChildOrderResult[]> => {
   const orders = await getOrders(productCode, { parent_order_id: parentOrderId });
   return orders.map((order) => convertOrder(order));
@@ -78,7 +84,21 @@ export const sendOrder = async (productCode: string, orderType: 'LIMIT' | 'MARKE
 
   const result = await sendOrderBitflyer(productCode, { child_order_type: orderType, side, size, price });
 
-  return result?.child_order_acceptance_id;
+  if (!result) return undefined;
+  const order: Order = {
+    acceptanceId: result.child_order_acceptance_id,
+    orderDate: new Date(),
+    state: 'UNKNOWN',
+    parentSortMethod: 'NORMAL',
+    childOrderList: [{
+      orderType,
+      side,
+      size,
+      state: 'UNKNOWN',
+      price,
+    }],
+  };
+  return order;
 
 };
 

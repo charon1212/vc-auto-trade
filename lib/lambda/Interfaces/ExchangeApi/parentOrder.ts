@@ -1,8 +1,7 @@
 import { sendParentOrder } from "./Bitflyer/sendParentOrder";
-import { getOrderSize, OrderStateExchangeApi } from "./order";
+import { getOrderSize, } from "./order";
 import { cancelParentOrder as cancelParentOrderBitflyer } from './Bitflyer/cancelParentOrder';
-import { getParentOrders as getParentOrdersBitflyer, ParentOrderBitflyer } from './Bitflyer/getParentOrders';
-import { Order, OrderSide, OrderState, OrderType } from "../DomainType";
+import { Order, OrderSide, OrderState, ParentOrderMethod, } from "../DomainType";
 import { getParentOrderDetail } from "./Bitflyer/getParentOrderDetail";
 import { getOrders } from "./Bitflyer/getOrders";
 
@@ -31,7 +30,8 @@ export const sendSimpleOrder = async (productCode: string, childOrder: ChildOrde
     order_method: 'SIMPLE',
     parameters: [childOrderBitflyer],
   });
-  return result?.parent_order_acceptance_id;
+  if (!result) return undefined;
+  return makeReturnOrder(result.parent_order_acceptance_id, 'SIMPLE', [childOrderBitflyer]);
 
 };
 
@@ -53,7 +53,8 @@ export const sendIfDoneOrder = async (productCode: string, firstChildOrder: Chil
     order_method: 'IFD',
     parameters: [firstChildOrderBitflyer, secondChildOrderBitflyer],
   });
-  return result?.parent_order_acceptance_id;
+  if (!result) return undefined;
+  return makeReturnOrder(result.parent_order_acceptance_id, 'IFD', [firstChildOrderBitflyer, secondChildOrderBitflyer]);
 
 };
 
@@ -75,7 +76,8 @@ export const sendOneCancelsTheOtherOrder = async (productCode: string, firstChil
     order_method: 'OCO',
     parameters: [firstChildOrderBitflyer, secondChildOrderBitflyer],
   });
-  return result?.parent_order_acceptance_id;
+  if (!result) return undefined;
+  return makeReturnOrder(result.parent_order_acceptance_id, 'OCO', [firstChildOrderBitflyer, secondChildOrderBitflyer]);
 
 };
 
@@ -100,11 +102,21 @@ export const sendIFDOCOOrder = async (productCode: string, firstChildOrder: Chil
     order_method: 'IFDOCO',
     parameters: [firstChildOrderBitflyer, secondChildOrderBitflyer1, secondChildOrderBitflyer2,],
   });
-  return result?.parent_order_acceptance_id;
+  if (!result) return undefined;
+  return makeReturnOrder(result.parent_order_acceptance_id, 'IFDOCO', [firstChildOrderBitflyer, secondChildOrderBitflyer1, secondChildOrderBitflyer2]);
 
 };
 
-const convertBitflyerChildOrder = async (productCode: string, childOrder: ChildOrder,) => {
+type ChildOrderBitflyer = {
+  product_code: string,
+  condition_type: ConditionType,
+  side: "BUY" | "SELL",
+  size: number,
+  price?: number,
+  trigger_price?: number,
+  offset?: number,
+};
+const convertBitflyerChildOrder = async (productCode: string, childOrder: ChildOrder,): Promise<ChildOrderBitflyer | undefined> => {
 
   const size = await getOrderSize(productCode, childOrder.sizeByUnit);
   if (!size) return undefined;
@@ -118,6 +130,27 @@ const convertBitflyerChildOrder = async (productCode: string, childOrder: ChildO
     trigger_price: childOrder.triggerPrice,
     offset: childOrder.offset,
   };
+
+};
+
+const makeReturnOrder = (acceptanceId: string, method: ParentOrderMethod, childOrders: ChildOrderBitflyer[]) => {
+
+  const order: Order = {
+    acceptanceId: acceptanceId,
+    state: 'UNKNOWN',
+    orderDate: new Date(),
+    parentSortMethod: method,
+    childOrderList: childOrders.map((childOrderBitflyer) => ({
+      orderType: childOrderBitflyer.condition_type,
+      side: childOrderBitflyer.side,
+      size: childOrderBitflyer.size,
+      state: 'UNKNOWN',
+      price: childOrderBitflyer.price,
+      triggerPrice: childOrderBitflyer.trigger_price,
+      offset: childOrderBitflyer.offset,
+    })),
+  };
+  return order;
 
 };
 
