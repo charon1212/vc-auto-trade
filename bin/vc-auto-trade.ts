@@ -4,45 +4,65 @@ import * as cdk from '@aws-cdk/core';
 import { VcAutoTradeStack } from '../lib/vc-auto-trade-stack';
 import { VcAutoTradeStackDev } from '../lib/vc-auto-trade-stack-dev';
 import * as fs from 'fs';
+import { confirmCommandLine } from './confirmCommandLine';
 
-/* ■■■■ログ出力■■■■ */
 const isProductionBuild = process.env.ENV_NAME === 'production';
-if (isProductionBuild) {
-  console.log(`****************************************
-****************************************
-CAUTION!!  Production Deploy
-****************************************
-****************************************`);
-} else {
-  console.log('****Development Deploy****');
-}
 
-/* ■■■■デプロイ記録■■■■ */
-const record = `${isProductionBuild ? 'production' : 'development'} build at :${(new Date()).toISOString()}\r\n`;
-fs.writeFileSync('deployHistory.txt', record, { flag: 'a' });
+// デプロイを実施する処理
+const executeDeploy = () => {
 
-/* ■■■■デプロイ実施■■■■ */
-const params = {};
+  /* ■■■■デプロイ記録■■■■ */
+  const record = `${isProductionBuild ? 'production' : 'development'} build at :${(new Date()).toISOString()}\r\n`;
+  fs.writeFileSync('deployHistory.txt', record, { flag: 'a' });
 
-const app = new cdk.App();
+  /* ■■■■デプロイ実施■■■■ */
+  const params = {};
 
-if (isProductionBuild) {
-  new VcAutoTradeStack(app, 'VcAutoTradeStack', params);
-} else {
-  new VcAutoTradeStackDev(app, 'VcAutoTradeStackDev', params);
-}
+  const app = new cdk.App();
 
-/** もともとあった、paramsの説明をここに残す。 */
-/* If you don't specify 'env', this stack will be environment-agnostic.
- * Account/Region-dependent features and context lookups will not work,
- * but a single synthesized template can be deployed anywhere. */
+  if (isProductionBuild) {
+    new VcAutoTradeStack(app, 'VcAutoTradeStack', params);
+  } else {
+    new VcAutoTradeStackDev(app, 'VcAutoTradeStackDev', params);
+  }
 
-/* Uncomment the next line to specialize this stack for the AWS Account
- * and Region that are implied by the current CLI configuration. */
+  /** もともとあった、paramsの説明をここに残す。 */
+  /* If you don't specify 'env', this stack will be environment-agnostic.
+   * Account/Region-dependent features and context lookups will not work,
+   * but a single synthesized template can be deployed anywhere. */
+
+  /* Uncomment the next line to specialize this stack for the AWS Account
+   * and Region that are implied by the current CLI configuration. */
   // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
 
-/* Uncomment the next line if you know exactly what Account and Region you
- * want to deploy the stack to. */
+  /* Uncomment the next line if you know exactly what Account and Region you
+   * want to deploy the stack to. */
   // env: { account: '123456789012', region: 'us-east-1' },
 
-/* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+
+};
+
+if (isProductionBuild) {
+
+  // 本番環境用ビルドの場合、確認を行う。
+  const question = '*************************************************************************\r\n' +
+    '******************************** CAUTION ********************************\r\n' +
+    '*************************************************************************\r\n' +
+    'Are you sure you want to production deploy?(y = yes, other = no) > ';
+  confirmCommandLine(question, (ans: string) => {
+    if (ans === 'y' || ans === 'Y') {
+      console.log('****Production Deploy****');
+      executeDeploy();
+    } else {
+      console.log('Production Deploy has canceled.')
+    }
+  }, () => { });
+
+} else {
+
+  // ログ出力のみで、そのままデプロイタスクを実行する。
+  console.log('****Development Deploy****');
+  executeDeploy();
+
+}
