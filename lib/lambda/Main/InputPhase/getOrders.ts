@@ -1,3 +1,4 @@
+import { hasUncaughtExceptionCaptureCallback } from "process";
 import { asyncExecution } from "../../Common/util";
 import { searchOrders } from "../../Interfaces/AWS/Dynamodb/order";
 import { Order, OrderState } from "../../Interfaces/DomainType";
@@ -38,6 +39,7 @@ export const getOrders = async (productCode: string,) => {
       } else {
         // 特殊注文どうしよう。。。いったん保留。
         resultOrderList.push({ order, beforeState: order.state });
+        throw new Error('未実装');
       }
     };
   });
