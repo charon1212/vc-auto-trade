@@ -10,6 +10,7 @@ let productContextList: { productCode: string, context: VCATProductContext, }[] 
  */
 export const importProductContextFromDb = async () => {
 
+  /** スクリプトのフィールドで定義した変数「productContextList」は、Lambda関数実行ごとにクリアされるとは限らない。コンテナが再起動した場合は作り直されるが、そうでなければ前の情報を保持してしまう。そのため、必ずクリアする。 */
   productContextList = [];
   for (let productSetting of productSettings) {
     const context = await getProductContextFromDB(productSetting.productCode);
@@ -30,7 +31,7 @@ export const importProductContextFromDb = async () => {
  */
 export const getProductContext = async (productCode: string): Promise<VCATProductContext | undefined> => {
 
-  if (!productContextList) return {};
+  if (!productContextList) return undefined;
   const productContext = productContextList.find((item) => (item.productCode === productCode))?.context;
   if (productContext) {
     return productContext

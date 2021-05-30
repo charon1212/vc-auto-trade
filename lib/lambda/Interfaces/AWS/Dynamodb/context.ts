@@ -8,7 +8,9 @@ export type VCATProductContext = {
     id?: number,
     timestamp?: number,
   },
+  orderPhase: OrderPhase,
 };
+export type OrderPhase = 'Buying' | 'BuyOrderWaiting' | 'Selling' | 'SellOrderWaiting';
 type ContextRecord = {
   ClassType: string,
   SortKey: string,
@@ -36,11 +38,11 @@ export const getProductContext = async (productCode: string): Promise<VCATProduc
       const record = res.Item as ContextRecord;
       return record.data;
     } else {
-      return {};
+      return { orderPhase: 'Buying' };
     }
   } catch (err) {
     await handleError(__filename, 'getProductContextClassType', 'code', 'ProductContextの取得に失敗。', { productCode }, err);
-    return {};
+    return { orderPhase: 'Buying' };
   }
 };
 
@@ -61,5 +63,3 @@ export const setProductContext = async (productCode: string, data: VCATProductCo
     return;
   }
 };
-
-
