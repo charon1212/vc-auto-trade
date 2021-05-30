@@ -1,7 +1,12 @@
 import { asyncExecution } from "../Common/util";
 import handleError from "../HandleError/handleError";
+import { setExecution } from "../Interfaces/AWS/Dynamodb/execution";
+import { setLongExecution } from "../Interfaces/AWS/Dynamodb/longExecution";
+import { setOrder } from "../Interfaces/AWS/Dynamodb/order";
 import { Balance, Execution, ExecutionAggregated, Order } from "../Interfaces/DomainType";
 import { importProductContextFromDb, saveProductContext } from "./context";
+import { execute } from "./ExecutePhase/execute";
+import { ExecutePhaseFunction } from "./ExecutePhase/interface";
 import saveExecutionHistory from "./ExecutionHistory/saveExecutionHistory";
 import { getBalances } from "./InputPhase/getBalances";
 import { getExecutions } from "./InputPhase/getExecutions";
@@ -38,9 +43,16 @@ const productEntryOrg = async (productSetting: ProductSetting, before1min: Date)
 /** プロダクトごとのエントリー */
 const productEntry = async (productSetting: ProductSetting) => {
 
+  const productCode = productSetting.productCode;
+
   // 基準時刻を作る。
   const nowTimestamp = Date.now();
-  const std = Math.floor(nowTimestamp / (60 * 1000)) * 60 * 1000;
+  const minuteByMilliseconds = 60 * 1000;
+  const std = Math.floor(nowTimestamp / minuteByMilliseconds) * minuteByMilliseconds; // 基準時刻: 現在時刻を分単位で切り捨て
+  const stdBefore1Min = std - minuteByMilliseconds; // 基準時刻の1分前
+  const hourByMilliseconds = 60 * 60 * 1000;
+  const stdHour = Math.floor(nowTimestamp / hourByMilliseconds) * hourByMilliseconds; // 長期基準時刻: 現在時刻を時単位で切り捨て
+  const stdHourBefore1Hour = stdHour - hourByMilliseconds;
 
   /** ■■ 入力フェーズ ■■ */
   let executions: Execution[] = []; // 「基準時刻の1分前」以降の約定履歴の一覧
@@ -62,11 +74,19 @@ const productEntry = async (productSetting: ProductSetting) => {
     });
 
   /** 入力フェーズの確認 */
-  if(!balanceReal || !balanceVirtual){
+  if (!balanceReal || !balanceVirtual) {
     await handleError(__filename, 'productEntry', 'code', '資産情報を取得できませんでした。', { productSetting, });
+    return;
   }
 
-  /** 処理フェーズ */
+  /** ■■ 処理フェーズ ■■ */
+  const { newAggregatedExecutions, updatedOrder, newLongAggregatedExecution } = await execute({ executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, });
 
+  /** ■■ 保存フェーズ ■■ */
+  await asyncExecution(
+    async () => { await setExecution(productCode, stdBefore1Min.toString(), newAggregatedExecutions); },
+    ...(updatedOrder.map((order) => (async () => { await setOrder(productCode, order) }))),
+    async () => { if (newLongAggregatedExecution) { await setLongExecution(productCode, stdHourBefore1Hour.toString(), newLongAggregatedExecution) } },
+  )
 
 };
