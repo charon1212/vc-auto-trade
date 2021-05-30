@@ -58,6 +58,18 @@ export const getStateOrders = async (productCode: string, state: OrderStateExcha
 };
 
 /**
+ * 特定の注文を取得する。
+ * @param productCode プロダクトコード。
+ * @param orderId 検索対象の注文ID。
+ * @param acceptanceId 検索対象の受付ID。
+ * @returns 特定の注文。配列形式で返却する。
+ */
+export const getOrder = async (productCode: string, orderId?: string, acceptanceId?: string) => {
+  const orders = await getOrders(productCode, { child_order_id: orderId, child_order_acceptance_id: acceptanceId });
+  return orders.map((order) => convertOrder(order));
+};
+
+/**
  * 特定の親注文に関連する子注文の一覧を取得する。
  * @param productCode プロダクトコード。
  * @param parentOrderId 親注文の注文ID。
