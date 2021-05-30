@@ -206,7 +206,12 @@ export const getParentOrder = async (productCode: string, acceptanceId: string):
 
 };
 
-const decideParentOrderState = (childOrderStateList: OrderState[]): OrderState => {
+/**
+ * 親注文の状態を決定する。
+ * @param childOrderStateList 子注文の状態のリスト。
+ * @returns 親注文の状態。
+ */
+export const decideParentOrderState = (childOrderStateList: OrderState[]): OrderState => {
 
   const stateList: OrderState[] = ['ACTIVE', 'UNKNOWN', 'REJECTED', 'COMPLETED', 'CANCELED', 'EXPIRED'];
   for (let state of stateList) {
