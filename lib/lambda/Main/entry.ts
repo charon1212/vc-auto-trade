@@ -2,11 +2,10 @@ import { asyncExecution } from "../Common/util";
 import handleError from "../HandleError/handleError";
 import { setExecution } from "../Interfaces/AWS/Dynamodb/execution";
 import { setLongExecution } from "../Interfaces/AWS/Dynamodb/longExecution";
-import { setOrder } from "../Interfaces/AWS/Dynamodb/order";
-import { Balance, Execution, ExecutionAggregated, Order } from "../Interfaces/DomainType";
+import { deleteOrder, setOrder } from "../Interfaces/AWS/Dynamodb/order";
+import { Balance, Execution, ExecutionAggregated, Order, OrderState } from "../Interfaces/DomainType";
 import { importProductContextFromDb, saveProductContext } from "./context";
 import { execute } from "./ExecutePhase/execute";
-import { ExecutePhaseFunction } from "./ExecutePhase/interface";
 import saveExecutionHistory from "./ExecutionHistory/saveExecutionHistory";
 import { getBalances } from "./InputPhase/getBalances";
 import { getExecutions } from "./InputPhase/getExecutions";
@@ -14,6 +13,7 @@ import { getLongAggregatedExecutions } from "./InputPhase/getLongAggregatedExecu
 import { getOrders } from "./InputPhase/getOrders";
 import { getShortAggregatedExecutions } from "./InputPhase/getShortAggregatedExecutions";
 import { ProductSetting, productSettings } from "./productSettings";
+import { StandardTime } from "./StandardTime";
 
 export const entry = async () => {
 
@@ -46,26 +46,20 @@ const productEntry = async (productSetting: ProductSetting) => {
   const productCode = productSetting.productCode;
 
   // 基準時刻を作る。
-  const nowTimestamp = Date.now();
-  const minuteByMilliseconds = 60 * 1000;
-  const std = Math.floor(nowTimestamp / minuteByMilliseconds) * minuteByMilliseconds; // 基準時刻: 現在時刻を分単位で切り捨て
-  const stdBefore1Min = std - minuteByMilliseconds; // 基準時刻の1分前
-  const hourByMilliseconds = 60 * 60 * 1000;
-  const stdHour = Math.floor(nowTimestamp / hourByMilliseconds) * hourByMilliseconds; // 長期基準時刻: 現在時刻を時単位で切り捨て
-  const stdHourBefore1Hour = stdHour - hourByMilliseconds;
+  const std = new StandardTime(Date.now());
 
   /** ■■ 入力フェーズ ■■ */
   let executions: Execution[] = []; // 「基準時刻の1分前」以降の約定履歴の一覧
   let shortAggregatedExecutions: ExecutionAggregated[] = []; // 10秒間隔で集計した集計約定のリスト
   let longAggregatedExecutions: ExecutionAggregated[] = []; // 1時間間隔で集計した集計約定のリスト
-  let orders: Order[] = []; // DynamoDB上でACTIVEまたはUNKNOWNとなっている注文のリスト
+  let orders: { order: Order, beforeState: OrderState }[] = []; // DynamoDB上でACTIVEまたはUNKNOWNとなっている注文のリスト
   let balanceReal: Balance | undefined = undefined; // 日本円の資産残高
   let balanceVirtual: Balance | undefined = undefined; // 仮想通貨の資産残高
 
   await asyncExecution(
-    async () => { executions = await getExecutions(productSetting.productCode, std) },
-    async () => { shortAggregatedExecutions = await getShortAggregatedExecutions(productSetting.productCode, std) },
-    async () => { longAggregatedExecutions = await getLongAggregatedExecutions(productSetting.productCode, std) },
+    async () => { executions = await getExecutions(productSetting.productCode, std.getStd()) },
+    async () => { shortAggregatedExecutions = await getShortAggregatedExecutions(productSetting.productCode, std.getStd()) },
+    async () => { longAggregatedExecutions = await getLongAggregatedExecutions(productSetting.productCode, std.getStd()) },
     async () => { orders = await getOrders(productSetting.productCode) },
     async () => {
       const obj = await getBalances(productSetting.currencyCode.real, productSetting.currencyCode.virtual);
@@ -80,13 +74,23 @@ const productEntry = async (productSetting: ProductSetting) => {
   }
 
   /** ■■ 処理フェーズ ■■ */
-  const { newAggregatedExecutions, updatedOrder, newLongAggregatedExecution } = await execute({ executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, });
+  const { newAggregatedExecutions, updatedOrder, newLongAggregatedExecution } = await execute({ executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, std, });
 
   /** ■■ 保存フェーズ ■■ */
   await asyncExecution(
-    async () => { await setExecution(productCode, stdBefore1Min.toString(), newAggregatedExecutions); },
-    ...(updatedOrder.map((order) => (async () => { await setOrder(productCode, order) }))),
-    async () => { if (newLongAggregatedExecution) { await setLongExecution(productCode, stdHourBefore1Hour.toString(), newLongAggregatedExecution) } },
+    async () => { await setExecution(productCode, std.getStdBefore1Min().toString(), newAggregatedExecutions); },
+    ...(updatedOrder.map((orderInfo) => (async () => { await saveOrder(productCode, orderInfo.order, orderInfo.beforeState) }))),
+    async () => { if (newLongAggregatedExecution) { await setLongExecution(productCode, std.getHourStdBefore1Hour().toString(), newLongAggregatedExecution) } },
   )
+
+};
+
+const saveOrder = async (productCode: string, order: Order, beforeState: OrderState) => {
+
+  if (order.state !== beforeState) {
+    // 前のステートのオーダーを削除する。
+    await deleteOrder(productCode, beforeState, order.acceptanceId, order.orderDate);
+  }
+  await setOrder(productCode, order);
 
 };

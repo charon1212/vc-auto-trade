@@ -1,6 +1,6 @@
 import { asyncExecution } from "../../Common/util";
 import { searchOrders } from "../../Interfaces/AWS/Dynamodb/order";
-import { Order } from "../../Interfaces/DomainType";
+import { Order, OrderState } from "../../Interfaces/DomainType";
 import { getOrder } from "../../Interfaces/ExchangeApi/order";
 
 export const getOrders = async (productCode: string,) => {
@@ -16,10 +16,13 @@ export const getOrders = async (productCode: string,) => {
   orderListFromDb.push(...unknownOrderFromDb);
   orderListFromDb.push(...activeOrderFromDb);
 
+  const resultOrderList: { order: Order, beforeState: OrderState }[] = [];
+
   const syncronizeOrderFuncList = orderListFromDb.map((order) => {
     return async () => {
       if (order.parentSortMethod === 'NORMAL') {
         const orderFromApi = (await getOrder(productCode, undefined, order.acceptanceId))[0];
+        const beforeState = order.state;
         if (orderFromApi) {
           // 同期処理
           order.id = orderFromApi.id;
@@ -31,14 +34,16 @@ export const getOrders = async (productCode: string,) => {
           order.childOrderList[0].cancelSize = orderFromApi.cancelSize;
           order.childOrderList[0].executedSize = orderFromApi.executedSize;
         }
+        resultOrderList.push({ order, beforeState });
       } else {
         // 特殊注文どうしよう。。。いったん保留。
+        resultOrderList.push({ order, beforeState: order.state });
       }
     };
   });
 
   await asyncExecution(...syncronizeOrderFuncList);
 
-  return orderListFromDb;
+  return resultOrderList;
 
 };

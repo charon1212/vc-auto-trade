@@ -41,7 +41,7 @@ export type OrderDynamoDB = {
  */
 export const setOrder = async (productCode: string, data: Order) => {
 
-  const sortKey = getSortKey(data);
+  const sortKey = getSortKey(data.state, data.acceptanceId, data.orderDate);
   if (!sortKey) return;
 
   const convertedData: OrderSave = {
@@ -66,17 +66,17 @@ export const setOrder = async (productCode: string, data: Order) => {
 
 };
 
-const getSortKey = async (order: Order) => {
-  const stateCode = getStateCode(order.state);
+const getSortKey = async (state: OrderState, acceptanceId: string, orderDate: Date,) => {
+  const stateCode = getStateCode(state);
   if (!stateCode) {
-    await handleError(__filename, 'getSortKey', 'code', 'stateCodeが取得できませんでした。', { order, },);
+    await handleError(__filename, 'getSortKey', 'code', 'stateCodeが取得できませんでした。', { state, acceptanceId, orderDate, },);
     return undefined;
   }
-  if (order.acceptanceId.length !== 25) {
-    await handleError(__filename, 'getSortKey', 'code', '受付IDの桁数が25桁ではありません。', { order, },);
+  if (acceptanceId.length !== 25) {
+    await handleError(__filename, 'getSortKey', 'code', '受付IDの桁数が25桁ではありません。', { state, acceptanceId, orderDate, },);
     return undefined;
   }
-  return stateCode + order.orderDate.getTime().toString() + order.acceptanceId;
+  return stateCode + orderDate.getTime().toString() + acceptanceId;
 };
 
 /**
@@ -121,5 +121,23 @@ export const searchOrders = async (productCode: string, state: OrderState,) => {
   } catch (err) {
     await handleError(__filename, 'searchOrders', 'code', 'DBの検索に失敗。', { productCode, state, }, err);
     return { count: 0, result: [] };
+  }
+};
+
+export const deleteOrder = async (productCode: string, state: OrderState, acceptanceId: string, orderDate: Date,) => {
+  const sortKey = getSortKey(state, acceptanceId, orderDate);
+  appLogger.info(`DynamoDB::deleteOrder, productCode:${productCode}, sortKey: ${sortKey}`);
+  try {
+    await db.delete({
+      TableName: processEnv.TableName,
+      Key: {
+        ClassType: getOrderClassType(productCode),
+        SortKey: sortKey,
+      }
+    }).promise();
+    return true;
+  } catch (err) {
+    await handleError(__filename, 'deleteOrder', 'code', 'DBの削除に失敗。', { productCode, state, acceptanceId, orderDate, }, err);
+    return false;
   }
 };
