@@ -1,15 +1,20 @@
-import { Balance, Execution, ExecutionAggregated, Order } from "../../Interfaces/DomainType";
+import { Balance, Execution, ExecutionAggregated, Order, OrderState } from "../../Interfaces/DomainType";
+import { ProductSetting } from "../productSettings";
+import { StandardTime } from "../StandardTime";
 
 export type Input = {
   executions: Execution[],
   shortAggregatedExecutions: ExecutionAggregated[],
   longAggregatedExecutions: ExecutionAggregated[],
-  orders: Order[],
+  orders: { order: Order, beforeState: OrderState }[],
   balanceReal: Balance,
   balanceVirtual: Balance,
+
+  productSetting: ProductSetting,
+  std: StandardTime,
 };
 export type Output = {
-  updatedOrder: Order[],
+  updatedOrder: { order: Order, beforeState: OrderState }[],
   newAggregatedExecutions: ExecutionAggregated[],
   newLongAggregatedExecution?: ExecutionAggregated,
 };
