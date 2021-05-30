@@ -60,7 +60,7 @@ RDB設計が頭から抜けないので…下記のように使う。たぶん�
 - PK
   - PKは固定値で、`<PC>ORDER`とする。
 - SK
-  - SKは`<state><timestamp>`とする。ただし、stateは次に示す状態コード(3文字固定長)とする。timestampは、発注を本システムが行った時点のUnix timestampとする。
+  - SKは`<state><timestamp><acceptanceId>`とする。ただし、stateは次に示す状態コード(3文字固定長)とする。timestampは、発注を本システムが行った時点のUnix timestampとする。acceptanceIdは、注文の受付IDで、25桁の固定長とする。
 
 | 状態コード | 状態 | 意味 |
 | :--:| :-- | :--|

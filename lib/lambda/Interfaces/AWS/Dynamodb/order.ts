@@ -39,20 +39,17 @@ export type OrderDynamoDB = {
  * @param sortKey 
  * @param data 
  */
-export const setOrder = async (productCode: string, timestamp: number, data: Order) => {
+export const setOrder = async (productCode: string, data: Order) => {
 
-  appLogger.info(`DynamoDB::setLongExecution, productCode:${productCode}, timestamp: ${timestamp}, data: ${JSON.stringify(data)}`);
+  const sortKey = getSortKey(data);
+  if (!sortKey) return;
 
-  const stateCode = getStateCode(data.state);
-  if (!stateCode) {
-    await handleError(__filename, 'setOrder', 'code', 'stateCodeが取得できませんでした。', { productCode, timestamp, data, },);
-    return;
-  }
-  const sortKey = getStateCode(data.state) + timestamp.toString();
   const convertedData: OrderSave = {
     ...data,
     orderDateTimestamp: data.orderDate.getTime(),
   }
+
+  appLogger.info(`DynamoDB::setLongExecution, productCode:${productCode}, data: ${JSON.stringify(data)}`);
 
   try {
     await db.put({
@@ -64,9 +61,22 @@ export const setOrder = async (productCode: string, timestamp: number, data: Ord
       }
     }).promise();
   } catch (err) {
-    await handleError(__filename, 'setOrder', 'code', 'DBの保存に失敗。', { productCode, timestamp, data, }, err);
+    await handleError(__filename, 'setOrder', 'code', 'DBの保存に失敗。', { productCode, data, }, err);
   }
 
+};
+
+const getSortKey = async (order: Order) => {
+  const stateCode = getStateCode(order.state);
+  if (!stateCode) {
+    await handleError(__filename, 'getSortKey', 'code', 'stateCodeが取得できませんでした。', { order, },);
+    return undefined;
+  }
+  if (order.acceptanceId.length !== 25) {
+    await handleError(__filename, 'getSortKey', 'code', '受付IDの桁数が25桁ではありません。', { order, },);
+    return undefined;
+  }
+  return stateCode + order.orderDate.getTime().toString() + order.acceptanceId;
 };
 
 /**
