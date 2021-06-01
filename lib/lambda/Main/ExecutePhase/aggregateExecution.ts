@@ -24,7 +24,7 @@ export const aggregateExecution = async (executions: Execution[], shortAggregate
   /** まだ長期集計約定が作られていない場合、長期集計約定を作成する。 */
   let newLongAggregatedExecution: ExecutionAggregated | undefined = undefined;
   const longTimestamp = std.getHourStdBefore1Hour();
-  if (longAggregatedExecutions[longAggregatedExecutions.length - 1].timestamp !== longTimestamp) {
+  if (longAggregatedExecutions.length === 0 || longAggregatedExecutions[longAggregatedExecutions.length - 1].timestamp !== longTimestamp) {
     const allAggregatedExecutions = [...shortAggregatedExecutions, ...newShortAggregatedExecutions];
     const start = std.getHourStdBefore1Hour();
     const end = std.getHourStd();

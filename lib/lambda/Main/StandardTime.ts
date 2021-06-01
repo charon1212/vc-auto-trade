@@ -12,8 +12,8 @@ export class StandardTime {
   private stdHour: number;
   constructor(now: number) {
     this.now = now;
-    this.std = Math.floor(now * StandardTime.minuteByMilliseconds) / StandardTime.minuteByMilliseconds;
-    this.stdHour = Math.floor(now * StandardTime.hourByMilliseconds) / StandardTime.hourByMilliseconds;
+    this.std = Math.floor(now / StandardTime.minuteByMilliseconds) * StandardTime.minuteByMilliseconds;
+    this.stdHour = Math.floor(now / StandardTime.hourByMilliseconds) * StandardTime.hourByMilliseconds;
   }
 
   getNow() {
