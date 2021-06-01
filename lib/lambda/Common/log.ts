@@ -6,7 +6,12 @@ const maxLogLevel = logLevelMap.get(processEnv.LogLevel);
 const putLog = (log: any, putProduction: boolean, logLevel: number, logger: (log: any) => void) => {
 
   if (!putProduction && processEnv.EnvName === 'production') return;
-  if (maxLogLevel && logLevel <= maxLogLevel) logger(log);
+  if (maxLogLevel && logLevel <= maxLogLevel) {
+    logger(log);
+    if (logLevel === 1) {
+      console.trace(); // エラーログの場合のみ、スタックトレースを追記
+    }
+  }
 
 }
 
