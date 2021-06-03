@@ -41,7 +41,7 @@ export type OrderDynamoDB = {
  */
 export const setOrder = async (productCode: string, data: Order) => {
 
-  const sortKey = getSortKey(data.state, data.acceptanceId, data.orderDate);
+  const sortKey = await getSortKey(data.state, data.acceptanceId, data.orderDate);
   if (!sortKey) return;
 
   const convertedData: OrderSave = {
@@ -49,7 +49,7 @@ export const setOrder = async (productCode: string, data: Order) => {
     orderDateTimestamp: data.orderDate.getTime(),
   }
 
-  appLogger.info(`DynamoDB::setLongExecution, productCode:${productCode}, data: ${JSON.stringify(data)}`);
+  appLogger.info(`DynamoDB::setLongExecution, ${JSON.stringify({ productCode, sortKey, convertedData })}`);
 
   try {
     await db.put({
