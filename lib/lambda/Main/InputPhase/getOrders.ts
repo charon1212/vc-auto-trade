@@ -1,8 +1,11 @@
 import { hasUncaughtExceptionCaptureCallback } from "process";
+import { appLogger } from "../../Common/log";
 import { asyncExecution } from "../../Common/util";
 import { searchOrders } from "../../Interfaces/AWS/Dynamodb/order";
 import { Order, OrderState } from "../../Interfaces/DomainType";
+import { getParentOrderDetail } from "../../Interfaces/ExchangeApi/Bitflyer/getParentOrderDetail";
 import { getOrder } from "../../Interfaces/ExchangeApi/order";
+import { getParentOrder } from "../../Interfaces/ExchangeApi/parentOrder";
 
 export const getOrders = async (productCode: string,) => {
 
@@ -39,7 +42,11 @@ export const getOrders = async (productCode: string,) => {
       } else {
         // 特殊注文どうしよう。。。いったん保留。
         resultOrderList.push({ order, beforeState: order.state });
-        throw new Error('未実装');
+        const orderFromApi = (await getParentOrder(productCode, order.acceptanceId));
+        const orderDetailFromApi = await getParentOrderDetail(productCode, { parent_order_acceptance_id: order.acceptanceId });
+        appLogger.info('▼▼▼特殊注文のAPI取得データ▼▼▼');
+        appLogger.info(JSON.stringify({ orderFromApi, orderDetailFromApi }));
+        // throw new Error('未実装');
       }
     };
   });
