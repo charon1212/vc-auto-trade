@@ -99,6 +99,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       timeoutSecond: 60,
       memorySize: 1024,
     });
+    dynamoTable.grantFullAccess(funcDevelopmentTest);
   }
 
 };
