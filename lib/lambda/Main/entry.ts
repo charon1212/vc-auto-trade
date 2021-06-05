@@ -1,3 +1,4 @@
+import { appLogger } from "../Common/log";
 import { asyncExecution } from "../Common/util";
 import handleError from "../HandleError/handleError";
 import { setExecution } from "../Interfaces/AWS/Dynamodb/execution";
@@ -24,7 +25,11 @@ export const entry = async () => {
 
   const promiseList: Promise<any>[] = [];
   for (let productSetting of productSettings) {
-    promiseList.push(productEntryOrg(productSetting, before1min));
+    if (productSetting.productCode === 'XRP_JPY') {
+      promiseList.push(productEntry(productSetting)); // リップルだけ試運転
+    } else {
+      promiseList.push(productEntryOrg(productSetting, before1min));
+    }
   }
   await Promise.all(promiseList);
 
@@ -76,18 +81,23 @@ const productEntry = async (productSetting: ProductSetting) => {
   /** ■■ 処理フェーズ ■■ */
   const { newAggregatedExecutions, updatedOrder, newLongAggregatedExecution } = await execute({ executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, std, });
 
+  // 1分間の分だけ抽出
+  const newAggregatedExecutions1Min = newAggregatedExecutions.slice(0, 6);
+  appLogger.info(`▼▼▼entry log▼▼▼
+${JSON.stringify({ productCode, newAggregatedExecutions, updatedOrder, newLongAggregatedExecution, executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, })}`);
+
   /** ■■ 保存フェーズ ■■ */
   await asyncExecution(
-    async () => { await setExecution(productCode, std.getStdBefore1Min().toString(), newAggregatedExecutions); },
-    ...(updatedOrder.map((orderInfo) => (async () => { await saveOrder(productCode, orderInfo.order, orderInfo.beforeState) }))),
+    async () => { await setExecution(productCode, std.getStdBefore1Min().toString(), newAggregatedExecutions1Min); },
     async () => { if (newLongAggregatedExecution) { await setLongExecution(productCode, std.getHourStdBefore1Hour().toString(), newLongAggregatedExecution) } },
-  )
+    ...(updatedOrder.map((orderInfo) => (async () => { await saveOrder(productCode, orderInfo.order, orderInfo.beforeState) }))),
+  );
 
 };
 
-const saveOrder = async (productCode: string, order: Order, beforeState: OrderState) => {
+const saveOrder = async (productCode: string, order: Order, beforeState?: OrderState) => {
 
-  if (order.state !== beforeState) {
+  if (beforeState && order.state !== beforeState) {
     // 前のステートのオーダーを削除する。
     await deleteOrder(productCode, beforeState, order.acceptanceId, order.orderDate);
   }

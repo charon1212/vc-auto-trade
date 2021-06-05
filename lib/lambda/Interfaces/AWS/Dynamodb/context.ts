@@ -8,9 +8,12 @@ export type VCATProductContext = {
     id?: number,
     timestamp?: number,
   },
-  orderPhase: OrderPhase,
+  orderPhase?: OrderPhase,
+  orderAcceptanceId?: string,
+  buyOrderPrice?: number,
+  stopLossTimestamp?: number,
 };
-export type OrderPhase = 'Buying' | 'BuyOrderWaiting' | 'Selling' | 'SellOrderWaiting';
+export type OrderPhase = 'Buying' | 'BuyOrderWaiting' | 'Selling' | 'SellOrderWaiting' | 'StopLoss';
 type ContextRecord = {
   ClassType: string,
   SortKey: string,

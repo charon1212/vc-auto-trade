@@ -1,5 +1,6 @@
 import { aggregateExecution } from "./aggregateExecution";
 import { ExecutePhaseFunction } from "./interface";
+import { main } from "./OrderLogic/main";
 
 export const execute: ExecutePhaseFunction = async (input) => {
 
@@ -8,10 +9,19 @@ export const execute: ExecutePhaseFunction = async (input) => {
   const { newShortAggregatedExecutions, newLongAggregatedExecution } =
     await aggregateExecution(executions, shortAggregatedExecutions, longAggregatedExecutions, std);
 
+  const newOrders = await main({
+    shortAggregatedExecutions: [...shortAggregatedExecutions, ...newShortAggregatedExecutions],
+    longAggregatedExecutions,
+    orders: orders.map((value) => value.order),
+    balanceReal,
+    balanceVirtual,
+    productSetting,
+  });
+
   return {
-    newAggregatedExecutions: [],
-    updatedOrder: [],
-    newLongAggregatedExecution: undefined,
+    newAggregatedExecutions: newShortAggregatedExecutions,
+    updatedOrder: [...orders, ...newOrders.map((order) => ({ order, }))],
+    newLongAggregatedExecution,
   };
 
 };

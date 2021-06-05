@@ -14,7 +14,7 @@ export type Input = {
   std: StandardTime,
 };
 export type Output = {
-  updatedOrder: { order: Order, beforeState: OrderState }[],
+  updatedOrder: { order: Order, beforeState?: OrderState }[],
   newAggregatedExecutions: ExecutionAggregated[],
   newLongAggregatedExecution?: ExecutionAggregated,
 };
