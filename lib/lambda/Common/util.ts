@@ -12,7 +12,7 @@ type CronItem = {
 
 /**
  * [date]が[cron]に指定した日付を満たすことを確認する。
- * @param targetDate 判定対象の日付を取得する。
+ * @param targetDate 判定対象の日付を設定する。日付はUTCとして解釈し、ローカライズされない。
  * @param cron 条件を表すCronを指定する。各項目は、省略すると条件に含めない。例：cron = {hour: {rep: false, target: 17}, date: {rep: true, target: 5}}は、2000-1-5 17:00:00, 2000-1-10 17:00:00, 2000-1-15 17:00:00, ...等に実行する。
  */
 export const matchCron = (targetDate: Date, cron: Cron) => {
@@ -59,4 +59,22 @@ export const asyncExecution = async (...executions: (() => Promise<void>)[]) => 
   const promiseList: Promise<void>[] = [];
   for (let execution of executions) promiseList.push(execution());
   return await Promise.all(promiseList);
+};
+
+/**
+ * 数値を特定の桁数で切り捨て、または四捨五入する。
+ * 例えば、moveUp(1.23456789, 0, 'floor') => 1, moveUp(1.23456789, 3, 'floor') => 1.234, moveUp(1.23456789, 5, 'floor') => 1.23456。
+ * @param value 対象の数値。
+ * @param digits 対象の桁数。
+ * @param operation floorまたはround。切り捨てるか、四捨五入するか。
+ */
+export const moveUp = (value: number, digits: number, operation: 'floor' | 'round') => {
+
+  const base = Math.pow(10, digits);
+  if (operation === 'floor') {
+    return Math.floor(value * base) / base;
+  } else {
+    return Math.round(value * base) / base;
+  }
+
 };
