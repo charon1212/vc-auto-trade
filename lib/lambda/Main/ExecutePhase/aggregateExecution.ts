@@ -29,20 +29,11 @@ export const aggregateExecution = async (executions: Execution[], shortAggregate
     const start = std.getHourStdBefore1Hour();
     const end = std.getHourStd();
     const targetExecutions = allAggregatedExecutions.filter((value) => (value.timestamp >= start && value.timestamp < end));
-    newLongAggregatedExecution = { timestamp: start, price: 0, buySize: 0, sellSize: 0, totalSize: 0, };
     // 10秒間隔のデータを1時間分蓄えるので、通常であれば配列長は360あるが、エラーなどで登録されないとこれより減る。8割以上あれば登録する。
     if (targetExecutions.length > 360 * 0.8) {
-      for (let execution of targetExecutions) {
-        newLongAggregatedExecution.price += execution.price * execution.totalSize;
-        newLongAggregatedExecution.buySize += execution.buySize;
-        newLongAggregatedExecution.sellSize += execution.sellSize;
-        newLongAggregatedExecution.totalSize += execution.totalSize;
-      }
-      if (newLongAggregatedExecution.totalSize === 0) {
-        await handleError(__filename, 'aggregateExecution', 'code', '1時間の全取引量が0と判定されました。。', { executions, shortAggregatedExecutions, longAggregatedExecutions, std, });
-      } else {
-        newLongAggregatedExecution.price = newLongAggregatedExecution.price / newLongAggregatedExecution.totalSize;
-      }
+      newLongAggregatedExecution = await aggregateLong(targetExecutions, start);
+    } else {
+      newLongAggregatedExecution = { timestamp: start, price: 0, buySize: 0, sellSize: 0, totalSize: 0, };
     }
   }
 
@@ -70,5 +61,24 @@ export const aggregateShort = (executions: Execution[], timestamp: number): Exec
   }
   if (aggregatedExecution.totalSize !== 0) aggregatedExecution.price = aggregatedExecution.price / aggregatedExecution.totalSize;
   return aggregatedExecution;
+
+};
+
+export const aggregateLong = async (executions: ExecutionAggregated[], timestamp: number): Promise<ExecutionAggregated> => {
+
+  const newLongAggregatedExecution = { timestamp, price: 0, buySize: 0, sellSize: 0, totalSize: 0, };
+  for (let execution of executions) {
+    newLongAggregatedExecution.price += execution.price * execution.totalSize;
+    newLongAggregatedExecution.buySize += execution.buySize;
+    newLongAggregatedExecution.sellSize += execution.sellSize;
+    newLongAggregatedExecution.totalSize += execution.totalSize;
+  }
+  if (newLongAggregatedExecution.totalSize === 0) {
+    await handleError(__filename, 'aggregateLong', 'code', '1時間の全取引量が0と判定されました。。', { executions, timestamp, });
+  } else {
+    newLongAggregatedExecution.price = newLongAggregatedExecution.price / newLongAggregatedExecution.totalSize;
+  }
+  return newLongAggregatedExecution;
+
 
 };
