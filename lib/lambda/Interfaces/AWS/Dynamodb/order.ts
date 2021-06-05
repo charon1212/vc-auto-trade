@@ -125,7 +125,7 @@ export const searchOrders = async (productCode: string, state: OrderState,) => {
 };
 
 export const deleteOrder = async (productCode: string, state: OrderState, acceptanceId: string, orderDate: Date,) => {
-  const sortKey = getSortKey(state, acceptanceId, orderDate);
+  const sortKey = await getSortKey(state, acceptanceId, orderDate);
   appLogger.info(`DynamoDB::deleteOrder, productCode:${productCode}, sortKey: ${sortKey}`);
   try {
     await db.delete({
