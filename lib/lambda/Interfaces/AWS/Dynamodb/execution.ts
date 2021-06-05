@@ -56,7 +56,7 @@ export const searchExecutions = async (productCode: string, sortKeyStart: string
         ':sk2': sotrKeyEnd,
       }
     }).promise();
-    appLogger.info(`DynamoDB::searchExecutions, productCode:${productCode}, result: ${JSON.stringify(res)}`);
+    appLogger.info(`DynamoDB::searchExecutions, ${JSON.stringify({ productCode, sortKeyStart, sotrKeyEnd, result: res })}`);
     return {
       count: res.Count,
       result: res.Items as ExecutionDynamoDB[],
