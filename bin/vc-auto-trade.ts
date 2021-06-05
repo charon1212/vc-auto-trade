@@ -45,19 +45,10 @@ const executeDeploy = () => {
 
 if (isProductionBuild) {
 
-  // 本番環境用ビルドの場合、確認を行う。
-  const question = '*************************************************************************\r\n' +
-    '******************************** CAUTION ********************************\r\n' +
-    '*************************************************************************\r\n' +
-    'Are you sure you want to production deploy?(y = yes, other = no) > ';
-  confirmCommandLine(question, (ans: string) => {
-    if (ans === 'y' || ans === 'Y') {
-      console.log('****Production Deploy****');
-      executeDeploy();
-    } else {
-      console.log('Production Deploy has canceled.')
-    }
-  }, () => { });
+  console.log(`**********************
+****Production Deploy****
+**********************`);
+  executeDeploy();
 
 } else {
 
