@@ -2,7 +2,7 @@ import { appLogger } from "../../../Common/log";
 import { moveUp } from "../../../Common/util";
 import handleError from "../../../HandleError/handleError";
 import { VCATProductContext } from "../../../Interfaces/AWS/Dynamodb/context";
-import { Balance, ExecutionAggregated, Order } from "../../../Interfaces/DomainType";
+import { Balance, ExecutionAggregated, Order, OrderState } from "../../../Interfaces/DomainType";
 import { cancelOrder, sendOrder } from "../../../Interfaces/ExchangeApi/order";
 import { sendSlackMessage } from "../../../Interfaces/Slack/sendSlackMessage";
 import { getProductContext } from "../../context";
@@ -36,6 +36,7 @@ export const main = async (input: Input): Promise<Order[]> => {
     judgeOrderSuccess(productContext.orderAcceptanceId!, orders, (order) => {
       // 成功したため、売りタイミング待ちに移行。
       productContext.orderPhase = 'Selling';
+      appLogger.info(`★ChangePhase★ BuyOrderWaiting → Selling`);
       productContext.orderAcceptanceId = undefined;
       if (order.parentSortMethod === 'NORMAL' && order.childOrderList[0]?.averagePrice) {
         productContext.buyOrderPrice = order.childOrderList[0].averagePrice;
@@ -46,6 +47,7 @@ export const main = async (input: Input): Promise<Order[]> => {
       // 失敗したため、再度買いタイミング待ちに移行。
       productContext.orderPhase = 'Buying';
       productContext.orderAcceptanceId = undefined;
+      appLogger.info(`★ChangePhase★ BuyOrderWaiting → Buying`);
     });
   } else if (productContext.orderPhase === 'SellOrderWaiting') { // 売り注文を出した後の約定待ち
     judgeOrderSuccess(productContext.orderAcceptanceId!, orders, (order) => {
@@ -53,16 +55,18 @@ export const main = async (input: Input): Promise<Order[]> => {
       productContext.orderPhase = 'Buying';
       productContext.orderAcceptanceId = undefined;
       productContext.buyOrderPrice = undefined;
+      appLogger.info(`★ChangePhase★ SellOrderWaiting → Buying`);
     }, (order) => {
       // 失敗したため、再度売りタイミング待ちに移行。
       productContext.orderPhase = 'Selling';
       productContext.orderAcceptanceId = undefined;
+      appLogger.info(`★ChangePhase★ SellOrderWaiting → Selling`);
     });
   }
 
   /** ■■2: フェーズごとの処理■■ */
   const newOrders: Order[] = [];
-  if (productContext.orderPhase === 'Buying') {
+  if (productContext.orderPhase === 'Buying' && canMakeNewOrder(productContext)) {
     // 買いのタイミングの場合、買い注文を入れる。
     const judgeResult = judgeBuyTiming(shortAggregatedExecutions);
     if (judgeResult) appLogger.info('★★★★★BuyTiming★★★★★');
@@ -73,6 +77,7 @@ export const main = async (input: Input): Promise<Order[]> => {
         newOrders.push(buyOrder);
         productContext.orderPhase = 'BuyOrderWaiting';
         productContext.orderAcceptanceId = buyOrder.acceptanceId;
+        appLogger.info(`★ChangePhase★ Buying → BuyOrderWaiting`);
         await sendSlackMessage(`PhaseTrans: Buying → BuyOrderWaiting.`, false);
       }
     }
@@ -87,6 +92,7 @@ export const main = async (input: Input): Promise<Order[]> => {
         newOrders.push(sellOrder);
         productContext.orderPhase = 'SellOrderWaiting';
         productContext.orderAcceptanceId = sellOrder.acceptanceId;
+        appLogger.info(`★ChangePhase★ Selling → SellOrderWaiting`);
         await sendSlackMessage(`PhaseTrans: Selling → SellOrderWaiting. ${JSON.stringify({ buyPrice, sellPrice: price })}`, false);
       }
     }
@@ -103,6 +109,7 @@ export const main = async (input: Input): Promise<Order[]> => {
         if (sellOrder) {
           newOrders.push(sellOrder);
           productContext.orderPhase = 'StopLoss';
+          appLogger.info(`★ChangePhase★ SellOrderWaiting → StopLoss`);
           productContext.stopLossTimestamp = Date.now();
         }
       }
@@ -113,12 +120,22 @@ export const main = async (input: Input): Promise<Order[]> => {
     const oneHourByMilliseconds = 60 * 60 * 1000;
     if (stopLossTime && Date.now() > stopLossTime + oneHourByMilliseconds) {
       productContext.orderPhase = 'Buying'; // 1時間待ったら買い待ちに戻る。
+      appLogger.info(`★ChangePhase★ StopLoss → Buying`);
       productContext.stopLossTimestamp = undefined;
     }
   }
 
   return newOrders;
 
+};
+
+const canMakeNewOrder = (context: VCATProductContext) => {
+  // Contextの指定で新規注文の許可が出ていない場合
+  if (!context.makeNewOrder) return false;
+  // 現在時刻が22:00～6:59の場合 (UTCで13時 <= t < 22時)の場合
+  const nowHour = (new Date()).getUTCHours();
+  if(nowHour >= 13 && nowHour < 22) return false;
+  return true;
 };
 
 /**
@@ -137,10 +154,14 @@ const judgeOrderSuccess = async (acceptanceId: string, orderList: Order[], onSuc
     await handleError(__filename, 'judgeOrderSuccess', 'code', '注文待機中に、対象の注文が見つかりませんでした。', { acceptanceId, orderList, });
     return;
   }
-  if (['CANCELED', 'EXPIRED', 'REJECTED'].join(targetOrder.state)) {// 注文に失敗した場合
-    onSuccess(targetOrder);
-  } else if (targetOrder.state === 'COMPLETED') { // 注文に成功した場合
+  appLogger.info(`★JudgeOrderSuccess★${JSON.stringify({ targetOrder, acceptanceId })}`);
+  const failedStateList: OrderState[] = ['CANCELED', 'EXPIRED', 'REJECTED'];
+  if (failedStateList.includes(targetOrder.state)) {// 注文に失敗した場合
+    appLogger.info(`★JudgeOrderSuccess★  Fail`);
     onFail(targetOrder);
+  } else if (targetOrder.state === 'COMPLETED') { // 注文に成功した場合
+    appLogger.info(`★JudgeOrderSuccess★  Success`);
+    onSuccess(targetOrder);
   }
 
 };
@@ -210,7 +231,10 @@ const judgeBuyTiming = (shortAggregatedExecutions: ExecutionAggregated[],) => {
     shortMoveAve: moveAverage10.slice(0, 40),
     longMoveAve: moveAverage40.slice(0, 40),
   }));
-  appLogger.info(`◇◇◇index: ${relativeIndexRate}◇◇◇`);
+  let moveAveLogStr = '';
+  for (let i = 0; i < 40; i++) moveAveLogStr += (moveAverage10[i] <= moveAverage40[i]) ? 'ー' : '＋';
+  appLogger.info(`◇◇◇index: ${relativeIndexRate}◇◇◇
+${moveAveLogStr}`);
 
   // 2時間平均よりも0.25%～1.5%下に位置しない
   if (relativeIndexRate < -0.015 || relativeIndexRate > -0.0025) return false;

@@ -12,6 +12,7 @@ export type VCATProductContext = {
   orderAcceptanceId?: string,
   buyOrderPrice?: number,
   stopLossTimestamp?: number,
+  makeNewOrder?: boolean,
 };
 export type OrderPhase = 'Buying' | 'BuyOrderWaiting' | 'Selling' | 'SellOrderWaiting' | 'StopLoss';
 type ContextRecord = {
