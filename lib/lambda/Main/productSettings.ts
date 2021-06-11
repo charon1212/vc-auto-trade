@@ -1,13 +1,13 @@
 export type ProductSetting = {
-  id: ProductId,
-  productCode: ProductCode,
-  exchangeCode: ExchangeCode,
-  currencyCode: {
-    virtual: string,
-    real: string,
+  id: ProductId, // プロダクトを表す一意識別子。本システムで定義するコード値。DB保存の際のprefix等に利用する。
+  productCode: ProductCode, // プロダクトコード。取引所APIの引数として渡すコード値。渡し先のAPI仕様に準拠して定義する。
+  exchangeCode: ExchangeCode, // 取引所を表す一意識別子。本システムで定義するコード値。
+  currencyCode: { // 取引対象の通貨コード。取引所APIの引数として渡すコード値。
+    virtual: string, // 仮想通貨の通貨コード。BTC等。
+    real: string, // 実通貨の通貨コード。だいたいJPY。
   },
-  orderUnit: number,
-  maxOrderSize: number,
+  orderUnit: number, // 注文単位。
+  maxOrderSize: number, // 最大注文量。注文単位の何倍かで定義。
 };
 
 export type ProductId = 'XRP_JPY' | 'BTC_JPY' | 'ETH_JPY' | 'GMO-BTC';
