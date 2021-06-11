@@ -1,5 +1,3 @@
-import { Response } from "node-fetch";
-import handleError from "../../../HandleError/handleError";
 import { Pagination } from "./type";
 
 export const convertPaginationToString = (pagination?: Pagination) => {

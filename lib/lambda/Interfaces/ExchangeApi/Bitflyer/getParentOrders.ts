@@ -4,6 +4,7 @@ import { Pagination } from "./type";
 import { convertPaginationToString } from "./util";
 import { sendRequest } from "./apiRequest";
 import { appLogger } from "../../../Common/log";
+import { ProductCode } from "../../../Main/productSettings";
 
 export type ParentOrderStateBitflyer = 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTED' | 'COMPLETED';
 export type ParentOrderTypeBitflyer = 'LIMIT' | 'MARKET' | 'STOP' | 'STOP_LIMIT' | 'TRAIL' | 'IFD' | 'OCO' | 'IFDOCO';
@@ -39,7 +40,7 @@ export type GetParentOrderParams = {
  * @returns 注文のリスト。プロパティの意味は型定義を参照。
  * @returns 
  */
-export const getParentOrders = async (productCode: string, params?: GetParentOrderParams, pagination?: Pagination,) => {
+export const getParentOrders = async (productCode: ProductCode, params?: GetParentOrderParams, pagination?: Pagination,) => {
 
   // 整数チェック
   if (!isAllInteger(pagination?.count, pagination?.before, pagination?.after)) {

@@ -1,4 +1,5 @@
 import handleError from "../../../HandleError/handleError";
+import { ProductCode } from "../../../Main/productSettings";
 import { sendRequest } from "./apiRequest";
 
 type SendOrderParams = {
@@ -20,7 +21,7 @@ type SendOrderResult = {
  * @param params Bodyパラメータ。詳細は型定義を参照。
  * @returns エラー時はundefined。受付IDを含むObject。詳細は型定義を参照。
  */
-export const sendOrder = async (productCode: string, params: SendOrderParams) => {
+export const sendOrder = async (productCode: ProductCode, params: SendOrderParams) => {
 
   // 引数チェックを軽く
   if (params.child_order_type === 'LIMIT' && params.price === undefined) {

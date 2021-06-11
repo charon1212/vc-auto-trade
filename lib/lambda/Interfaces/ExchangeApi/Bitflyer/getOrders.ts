@@ -1,6 +1,7 @@
 import { appLogger } from "../../../Common/log";
 import { convertStringToDate, isAllInteger, } from "../../../Common/util";
 import handleError from "../../../HandleError/handleError";
+import { ProductCode } from "../../../Main/productSettings";
 import { sendRequest } from "./apiRequest";
 import { Pagination } from "./type";
 import { convertPaginationToString, } from './util';
@@ -40,7 +41,7 @@ export type GetOrderParams = {
  * @returns 注文のリスト。プロパティの意味は型定義を参照。
  * @remarks こちらも参照：https://lightning.bitflyer.com/docs?lang=ja#注文の一覧を取得
  */
-export const getOrders = async (productCode: string, params?: GetOrderParams, pagination?: Pagination,) => {
+export const getOrders = async (productCode: ProductCode, params?: GetOrderParams, pagination?: Pagination,) => {
 
   // 整数チェック
   if (!isAllInteger(pagination?.count, pagination?.before, pagination?.after)) {

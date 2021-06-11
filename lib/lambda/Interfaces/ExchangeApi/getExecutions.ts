@@ -1,3 +1,4 @@
+import { ProductCode } from "../../Main/productSettings";
 import { Execution } from "../DomainType";
 import { ExecutionBitflyer, getExecutions as getBitflyerExecutions } from "./Bitflyer/getExecutions";
 
@@ -9,7 +10,7 @@ import { ExecutionBitflyer, getExecutions as getBitflyerExecutions } from "./Bit
  * @param lastExecutionId timestamp以前の約定ID。なければ指定しなくてもよいが、あると検索効率が上がる。
  * @returns 指定した時刻以降の約定履歴。
  */
-export const getExecutions = async (timestamp: number, productCode: string, lastExecutionId?: number) => {
+export const getExecutions = async (timestamp: number, productCode: ProductCode, lastExecutionId?: number) => {
 
   const executionList: ExecutionBitflyer[] = [];
   let before: number | undefined = undefined;

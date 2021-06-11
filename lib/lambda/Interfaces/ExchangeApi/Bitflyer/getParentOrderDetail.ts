@@ -1,4 +1,5 @@
 import handleError from "../../../HandleError/handleError";
+import { ProductCode } from "../../../Main/productSettings";
 import { OrderType } from "../../DomainType";
 import { sendRequest } from "./apiRequest";
 
@@ -30,7 +31,7 @@ export type ParentOrderDetailBitflyer = {
  * @param params リクエストのクエリパラメータ。
  * @returns 親注文の詳細。
  */
-export const getParentOrderDetail = async (productCode: string, params: GetParentOrderDetailParams): Promise<ParentOrderDetailBitflyer | undefined> => {
+export const getParentOrderDetail = async (productCode: ProductCode, params: GetParentOrderDetailParams): Promise<ParentOrderDetailBitflyer | undefined> => {
 
   if (!params.parent_order_id && !params.parent_order_acceptance_id) {
     await handleError(__filename, 'getParentOrderDetail', 'code', '受付IDか、注文IDのいずれかが必須です。', { productCode, params, });

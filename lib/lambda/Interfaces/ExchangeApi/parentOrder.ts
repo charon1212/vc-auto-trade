@@ -4,6 +4,7 @@ import { cancelParentOrder as cancelParentOrderBitflyer } from './Bitflyer/cance
 import { Order, OrderSide, OrderState, ParentOrderMethod, } from "../DomainType";
 import { getParentOrderDetail } from "./Bitflyer/getParentOrderDetail";
 import { getOrders } from "./Bitflyer/getOrders";
+import { ProductCode, ProductSetting } from "../../Main/productSettings";
 
 export type ChildOrder = {
   conditionType: ConditionType,
@@ -17,13 +18,13 @@ export type ConditionType = 'LIMIT' | 'MARKET' | 'STOP' | 'STOP_LIMIT' | 'TRAIL'
 
 /**
  * 通常の特殊注文を行う。
- * @param productCode プロダクトコード。
+ * @param productSetting プロダクト設定。
  * @param childOrder 注文。
  * @returns 親注文の受付ID。
  */
-export const sendSimpleOrder = async (productCode: string, childOrder: ChildOrder) => {
+export const sendSimpleOrder = async (productSetting: ProductSetting, childOrder: ChildOrder) => {
 
-  const childOrderBitflyer = await convertBitflyerChildOrder(productCode, childOrder);
+  const childOrderBitflyer = await convertBitflyerChildOrder(productSetting, childOrder);
   if (!childOrderBitflyer) return undefined;
 
   const result = await sendParentOrder({
@@ -37,16 +38,16 @@ export const sendSimpleOrder = async (productCode: string, childOrder: ChildOrde
 
 /**
  * If Done 注文を行う。
- * @param productCode プロダクトコード。
+ * @param productSetting プロダクト設定。
  * @param firstChildOrder 最初に注文する注文。
  * @param secondChildOrder 最初の注文が約定した後に発注する注文。
  * @returns 親注文の受付ID。
  */
-export const sendIfDoneOrder = async (productCode: string, firstChildOrder: ChildOrder, secondChildOrder: ChildOrder) => {
+export const sendIfDoneOrder = async (productSetting: ProductSetting, firstChildOrder: ChildOrder, secondChildOrder: ChildOrder) => {
 
-  const firstChildOrderBitflyer = await convertBitflyerChildOrder(productCode, firstChildOrder);
+  const firstChildOrderBitflyer = await convertBitflyerChildOrder(productSetting, firstChildOrder);
   if (!firstChildOrderBitflyer) return undefined;
-  const secondChildOrderBitflyer = await convertBitflyerChildOrder(productCode, secondChildOrder);
+  const secondChildOrderBitflyer = await convertBitflyerChildOrder(productSetting, secondChildOrder);
   if (!secondChildOrderBitflyer) return undefined;
 
   const result = await sendParentOrder({
@@ -60,16 +61,16 @@ export const sendIfDoneOrder = async (productCode: string, firstChildOrder: Chil
 
 /**
  * One Cancels the Other 注文を行う。どちらかの注文が約定すると自動的に他方の注文がキャンセルされる。
- * @param productCode プロダクトコード。
+ * @param productSetting プロダクト設定。
  * @param firstChildOrder 1つめの注文。
  * @param secondChildOrder 2つめの注文。
  * @returns 親注文の受付ID。
  */
-export const sendOneCancelsTheOtherOrder = async (productCode: string, firstChildOrder: ChildOrder, secondChildOrder: ChildOrder) => {
+export const sendOneCancelsTheOtherOrder = async (productSetting: ProductSetting, firstChildOrder: ChildOrder, secondChildOrder: ChildOrder) => {
 
-  const firstChildOrderBitflyer = await convertBitflyerChildOrder(productCode, firstChildOrder);
+  const firstChildOrderBitflyer = await convertBitflyerChildOrder(productSetting, firstChildOrder);
   if (!firstChildOrderBitflyer) return undefined;
-  const secondChildOrderBitflyer = await convertBitflyerChildOrder(productCode, secondChildOrder);
+  const secondChildOrderBitflyer = await convertBitflyerChildOrder(productSetting, secondChildOrder);
   if (!secondChildOrderBitflyer) return undefined;
 
   const result = await sendParentOrder({
@@ -83,19 +84,19 @@ export const sendOneCancelsTheOtherOrder = async (productCode: string, firstChil
 
 /**
  * If Done + One Cancels the Other 注文を行う。最初の注文が約定すると、残る2つのOCO注文を発注する。
- * @param productCode プロダクトコード。
+ * @param productSetting プロダクト設定。
  * @param firstChildOrder 最初の注文。
  * @param secondChildOrder 最初の注文の約定後の注文1。
  * @param secondChildOrder2 最初の注文の約定後の注文2。
  * @returns 親注文の受付ID。
  */
-export const sendIFDOCOOrder = async (productCode: string, firstChildOrder: ChildOrder, secondChildOrder1: ChildOrder, secondChildOrder2: ChildOrder) => {
+export const sendIFDOCOOrder = async (productSetting: ProductSetting, firstChildOrder: ChildOrder, secondChildOrder1: ChildOrder, secondChildOrder2: ChildOrder) => {
 
-  const firstChildOrderBitflyer = await convertBitflyerChildOrder(productCode, firstChildOrder);
+  const firstChildOrderBitflyer = await convertBitflyerChildOrder(productSetting, firstChildOrder);
   if (!firstChildOrderBitflyer) return undefined;
-  const secondChildOrderBitflyer1 = await convertBitflyerChildOrder(productCode, secondChildOrder1);
+  const secondChildOrderBitflyer1 = await convertBitflyerChildOrder(productSetting, secondChildOrder1);
   if (!secondChildOrderBitflyer1) return undefined;
-  const secondChildOrderBitflyer2 = await convertBitflyerChildOrder(productCode, secondChildOrder2);
+  const secondChildOrderBitflyer2 = await convertBitflyerChildOrder(productSetting, secondChildOrder2);
   if (!secondChildOrderBitflyer2) return undefined;
 
   const result = await sendParentOrder({
@@ -108,7 +109,7 @@ export const sendIFDOCOOrder = async (productCode: string, firstChildOrder: Chil
 };
 
 type ChildOrderBitflyer = {
-  product_code: string,
+  product_code: ProductCode,
   condition_type: ConditionType,
   side: "BUY" | "SELL",
   size: number,
@@ -116,13 +117,13 @@ type ChildOrderBitflyer = {
   trigger_price?: number,
   offset?: number,
 };
-const convertBitflyerChildOrder = async (productCode: string, childOrder: ChildOrder,): Promise<ChildOrderBitflyer | undefined> => {
+const convertBitflyerChildOrder = async (productSetting: ProductSetting, childOrder: ChildOrder,): Promise<ChildOrderBitflyer | undefined> => {
 
-  const size = await getOrderSize(productCode, childOrder.sizeByUnit);
+  const size = await getOrderSize(productSetting, childOrder.sizeByUnit);
   if (!size) return undefined;
 
   return {
-    product_code: productCode,
+    product_code: productSetting.productCode,
     condition_type: childOrder.conditionType,
     side: childOrder.side,
     size: size,
@@ -154,7 +155,7 @@ const makeReturnOrder = (acceptanceId: string, method: ParentOrderMethod, childO
 
 };
 
-export const cancelParentOrder = async (productCode: string, parentOrderId?: string, parentOrderAcceptanceId?: string) => {
+export const cancelParentOrder = async (productCode: ProductCode, parentOrderId?: string, parentOrderAcceptanceId?: string) => {
   return await cancelParentOrderBitflyer(productCode, {
     parent_order_id: parentOrderId,
     parent_order_acceptance_id: parentOrderAcceptanceId,
@@ -179,8 +180,7 @@ export type GetParentOrderResult = {
   }[],
 };
 
-export const getParentOrder = async (productCode: string, acceptanceId: string): Promise<GetParentOrderResult | undefined> => {
-
+export const getParentOrder = async (productCode: ProductCode, acceptanceId: string): Promise<GetParentOrderResult | undefined> => {
 
   const parentOrderDetail = await getParentOrderDetail(productCode, { parent_order_acceptance_id: acceptanceId });
   if (!parentOrderDetail) return undefined;

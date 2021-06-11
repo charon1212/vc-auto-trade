@@ -1,6 +1,7 @@
 import { appLogger } from '../../../Common/log';
 import { convertStringToDate } from '../../../Common/util';
 import handleError from '../../../HandleError/handleError';
+import { ProductCode } from '../../../Main/productSettings';
 import { sendRequest } from './apiRequest';
 
 export type ExecutionBitflyer = {
@@ -22,7 +23,7 @@ export type ExecutionBitflyer = {
  * @param after IDの最小値。検索結果はこの値を含まない。
  * @returns 取得した約定履歴。エラー時は空配列。
  */
-export const getExecutions = async (productCode: string, count: number, before?: number, after?: number) => {
+export const getExecutions = async (productCode: ProductCode, count: number, before?: number, after?: number) => {
 
   count = Math.floor(count);
   if (count < 1 || count > 500) {

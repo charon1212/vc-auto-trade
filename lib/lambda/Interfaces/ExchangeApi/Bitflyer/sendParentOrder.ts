@@ -1,4 +1,5 @@
 import handleError from "../../../HandleError/handleError";
+import { ProductCode } from "../../../Main/productSettings";
 import { sendRequest } from "./apiRequest";
 
 export type ParentOrderMethodBitflyer = 'SIMPLE' | 'IFD' | 'OCO' | 'IFDOCO';
@@ -10,7 +11,7 @@ export type SendParentOrderParams = {
   minute_to_expire?: number, // 有効期限(分単位)。省略した場合は43200(30日間)
   time_in_force?: ParentOrderTimeInForce, // 執行数量条件
   parameters: { // SIMPLE→1個、 IFD,OCO→2個、 IFDOCO→3個必要
-    product_code: string, // プロダクトコード
+    product_code: ProductCode, // プロダクトコード
     condition_type: ChildOrderConditionType, // 執行条件
     side: 'BUY' | 'SELL', // 売り・買い注文
     size: number, // 注文数量

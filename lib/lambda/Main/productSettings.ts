@@ -41,6 +41,6 @@ export const productSettings: ProductSetting[] = [
   },
 ];
 
-export const getProductSetting = (productCode: string) => {
-  return productSettings.find((item) => (item.productCode === productCode));
+export const getProductSetting = (productId: ProductId) => {
+  return productSettings.find((item) => (item.id === productId));
 };

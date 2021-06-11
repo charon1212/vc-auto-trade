@@ -1,4 +1,5 @@
 import handleError from "../../../HandleError/handleError";
+import { ProductCode } from "../../../Main/productSettings";
 import { sendRequest } from "./apiRequest";
 
 type CancelOrderParams = {
@@ -12,7 +13,7 @@ type CancelOrderParams = {
  * @param params Bodyパラメータ。詳細は型定義を参照。
  * @returns 成功はtrue、失敗はfalse。
  */
-export const cancelOrder = async (productCode: string, params: CancelOrderParams) => {
+export const cancelOrder = async (productCode: ProductCode, params: CancelOrderParams) => {
 
   if (!params.child_order_id && !params.child_order_acceptance_id) {
     await handleError(__filename, 'cancelOrder', 'code', '注文IDか注文受付IDのいずれかは必須です', { productCode, params, });
