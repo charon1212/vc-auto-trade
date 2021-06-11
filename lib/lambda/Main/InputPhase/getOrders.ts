@@ -6,14 +6,15 @@ import { Order, OrderState } from "../../Interfaces/DomainType";
 import { getParentOrderDetail } from "../../Interfaces/ExchangeApi/Bitflyer/getParentOrderDetail";
 import { getOrder } from "../../Interfaces/ExchangeApi/order";
 import { getParentOrder } from "../../Interfaces/ExchangeApi/parentOrder";
+import { ProductSetting } from "../productSettings";
 
-export const getOrders = async (productCode: string,) => {
+export const getOrders = async (productSetting: ProductSetting,) => {
 
   // DynamoDBからオーダー一覧を取得する
   let activeOrderFromDb: Order[] = [], unknownOrderFromDb: Order[] = [];
   await asyncExecution(
-    async () => { unknownOrderFromDb = (await searchOrders(productCode, 'UNKNOWN')).result?.map((item) => item.data) || [] },
-    async () => { activeOrderFromDb = (await searchOrders(productCode, 'ACTIVE')).result?.map((item) => item.data) || [] },
+    async () => { unknownOrderFromDb = (await searchOrders(productSetting.id, 'UNKNOWN')).result?.map((item) => item.data) || [] },
+    async () => { activeOrderFromDb = (await searchOrders(productSetting.id, 'ACTIVE')).result?.map((item) => item.data) || [] },
   );
 
   const orderListFromDb: Order[] = [];
@@ -25,7 +26,7 @@ export const getOrders = async (productCode: string,) => {
   const syncronizeOrderFuncList = orderListFromDb.map((order) => {
     return async () => {
       if (order.parentSortMethod === 'NORMAL') {
-        const orderFromApi = (await getOrder(productCode, undefined, order.acceptanceId))[0];
+        const orderFromApi = (await getOrder(productSetting.productCode, undefined, order.acceptanceId))[0];
         const beforeState = order.state;
         if (orderFromApi) {
           // 同期処理
@@ -42,8 +43,8 @@ export const getOrders = async (productCode: string,) => {
       } else {
         // 特殊注文どうしよう。。。いったん保留。
         resultOrderList.push({ order, beforeState: order.state });
-        const orderFromApi = (await getParentOrder(productCode, order.acceptanceId));
-        const orderDetailFromApi = await getParentOrderDetail(productCode, { parent_order_acceptance_id: order.acceptanceId });
+        const orderFromApi = (await getParentOrder(productSetting.productCode, order.acceptanceId));
+        const orderDetailFromApi = await getParentOrderDetail(productSetting.productCode, { parent_order_acceptance_id: order.acceptanceId });
         appLogger.info('▼▼▼特殊注文のAPI取得データ▼▼▼');
         appLogger.info(JSON.stringify({ orderFromApi, orderDetailFromApi }));
         // throw new Error('未実装');

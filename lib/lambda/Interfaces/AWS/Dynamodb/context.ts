@@ -1,6 +1,7 @@
 import { appLogger } from "../../../Common/log";
 import { processEnv } from "../../../Common/processEnv";
 import handleError from "../../../HandleError/handleError";
+import { ProductId } from "../../../Main/productSettings";
 import { db } from "./db";
 
 export type VCATProductContext = {
@@ -33,20 +34,20 @@ type ContextRecord = {
 const contextSortKey = 'context';
 const suffixContext = 'CONTEXT';
 
-const getProductContextClassType = (productCode: string) => {
-  return productCode + suffixContext;
+const getProductContextClassType = (productId: ProductId) => {
+  return productId + suffixContext;
 };
 
-export const getProductContext = async (productCode: string): Promise<VCATProductContext> => {
+export const getProductContext = async (productId: ProductId): Promise<VCATProductContext> => {
   try {
     const res = await db.get({
       TableName: processEnv.TableName,
       Key: {
-        'ClassType': getProductContextClassType(productCode),
+        'ClassType': getProductContextClassType(productId),
         'SortKey': contextSortKey,
       },
     }).promise();
-    appLogger.info(`DynamoDB::getProductContext, productCode:${productCode}, result: ${JSON.stringify(res)}`);
+    appLogger.info(`DynamoDB::getProductContext, productId:${productId}, result: ${JSON.stringify(res)}`);
     if (res.Item) {
       const record = res.Item as ContextRecord;
       return record.data;
@@ -54,25 +55,25 @@ export const getProductContext = async (productCode: string): Promise<VCATProduc
       return {};
     }
   } catch (err) {
-    await handleError(__filename, 'getProductContextClassType', 'code', 'ProductContextの取得に失敗。', { productCode }, err);
+    await handleError(__filename, 'getProductContextClassType', 'code', 'ProductContextの取得に失敗。', { productId }, err);
     return {};
   }
 };
 
-export const setProductContext = async (productCode: string, data: VCATProductContext) => {
+export const setProductContext = async (productId: ProductId, data: VCATProductContext) => {
   const item: ContextRecord = {
-    ClassType: getProductContextClassType(productCode),
+    ClassType: getProductContextClassType(productId),
     SortKey: contextSortKey,
     data: data,
   };
-  appLogger.info(`DynamoDB::setProductContext, productCode:${productCode}, item: ${JSON.stringify(item)}`);
+  appLogger.info(`DynamoDB::setProductContext, productId:${productId}, item: ${JSON.stringify(item)}`);
   try {
     await db.put({
       TableName: processEnv.TableName,
       Item: item,
     }).promise();
   } catch (err) {
-    await handleError(__filename, 'setProductContext', 'code', 'ProductContextの保存に失敗。', { productCode, data }, err);
+    await handleError(__filename, 'setProductContext', 'code', 'ProductContextの保存に失敗。', { productId, data }, err);
     return;
   }
 };

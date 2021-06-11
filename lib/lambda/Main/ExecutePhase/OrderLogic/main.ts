@@ -23,7 +23,7 @@ export type Input = {
 export const main = async (input: Input): Promise<Order[]> => {
 
   const { shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, } = input;
-  const productContext = await getProductContext(productSetting.productCode);
+  const productContext = await getProductContext(productSetting.id);
 
   if (!productContext) return [];
 

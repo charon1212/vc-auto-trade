@@ -7,13 +7,12 @@ import { deleteOrder, setOrder } from "../Interfaces/AWS/Dynamodb/order";
 import { Balance, Execution, ExecutionAggregated, Order, OrderState } from "../Interfaces/DomainType";
 import { importProductContextFromDb, saveProductContext } from "./context";
 import { execute } from "./ExecutePhase/execute";
-import saveExecutionHistory from "./ExecutionHistory/saveExecutionHistory";
 import { getBalances } from "./InputPhase/getBalances";
 import { getExecutions } from "./InputPhase/getExecutions";
 import { getLongAggregatedExecutions } from "./InputPhase/getLongAggregatedExecutions";
 import { getOrders } from "./InputPhase/getOrders";
 import { getShortAggregatedExecutions } from "./InputPhase/getShortAggregatedExecutions";
-import { ProductSetting, productSettings } from "./productSettings";
+import { ProductId, ProductSetting, productSettings } from "./productSettings";
 import { StandardTime } from "./StandardTime";
 
 export const entry = async () => {
@@ -25,23 +24,12 @@ export const entry = async () => {
 
   const promiseList: Promise<any>[] = [];
   for (let productSetting of productSettings) {
-    if (productSetting.productCode === 'XRP_JPY') {
-      promiseList.push(productEntry(productSetting)); // リップルだけ試運転
-    } else {
-      promiseList.push(productEntryOrg(productSetting, before1min));
-    }
+    promiseList.push(productEntry(productSetting));
   }
   await Promise.all(promiseList);
 
   await saveProductContext();
   return '';
-
-};
-
-/** プロダクトごとのエントリー(編集前) */
-const productEntryOrg = async (productSetting: ProductSetting, before1min: Date) => {
-
-  await saveExecutionHistory(productSetting.productCode, before1min);
 
 };
 
@@ -62,10 +50,10 @@ const productEntry = async (productSetting: ProductSetting) => {
   let balanceVirtual: Balance | undefined = undefined; // 仮想通貨の資産残高
 
   await asyncExecution(
-    async () => { executions = await getExecutions(productSetting.productCode, std.getStd()) },
-    async () => { shortAggregatedExecutions = await getShortAggregatedExecutions(productSetting.productCode, std.getStd()) },
-    async () => { longAggregatedExecutions = await getLongAggregatedExecutions(productSetting.productCode, std.getStd()) },
-    async () => { orders = await getOrders(productSetting.productCode) },
+    async () => { executions = await getExecutions(productSetting, std.getStd()) },
+    async () => { shortAggregatedExecutions = await getShortAggregatedExecutions(productSetting.id, std.getStd()) },
+    async () => { longAggregatedExecutions = await getLongAggregatedExecutions(productSetting.id, std.getStd()) },
+    async () => { orders = await getOrders(productSetting) },
     async () => {
       const obj = await getBalances(productSetting.currencyCode.real, productSetting.currencyCode.virtual);
       balanceReal = obj.balanceReal;
@@ -88,19 +76,19 @@ ${JSON.stringify({ productCode, newAggregatedExecutions, updatedOrder, newLongAg
 
   /** ■■ 保存フェーズ ■■ */
   await asyncExecution(
-    async () => { await setExecution(productCode, std.getStdBefore1Min().toString(), newAggregatedExecutions1Min); },
-    async () => { if (newLongAggregatedExecution) { await setLongExecution(productCode, std.getHourStdBefore1Hour().toString(), newLongAggregatedExecution) } },
-    ...(updatedOrder.map((orderInfo) => (async () => { await saveOrder(productCode, orderInfo.order, orderInfo.beforeState) }))),
+    async () => { await setExecution(productSetting.id, std.getStdBefore1Min().toString(), newAggregatedExecutions1Min); },
+    async () => { if (newLongAggregatedExecution) { await setLongExecution(productSetting.id, std.getHourStdBefore1Hour().toString(), newLongAggregatedExecution) } },
+    ...(updatedOrder.map((orderInfo) => (async () => { await saveOrder(productSetting.id, orderInfo.order, orderInfo.beforeState) }))),
   );
 
 };
 
-const saveOrder = async (productCode: string, order: Order, beforeState?: OrderState) => {
+const saveOrder = async (productId: ProductId, order: Order, beforeState?: OrderState) => {
 
   if (beforeState && order.state !== beforeState) {
     // 前のステートのオーダーを削除する。
-    await deleteOrder(productCode, beforeState, order.acceptanceId, order.orderDate);
+    await deleteOrder(productId, beforeState, order.acceptanceId, order.orderDate);
   }
-  await setOrder(productCode, order);
+  await setOrder(productId, order);
 
 };
