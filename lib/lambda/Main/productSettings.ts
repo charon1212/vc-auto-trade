@@ -8,6 +8,7 @@ export type ProductSetting = {
   },
   orderUnit: number, // 注文単位。
   maxOrderSize: number, // 最大注文量。注文単位の何倍かで定義。
+  executeOrderPhase: boolean, // 注文処理を実施するかどうか。
 };
 
 export type ProductId = 'XRP_JPY' | 'BTC_JPY' | 'ETH_JPY' | 'GMO-BTC';
@@ -21,7 +22,8 @@ export const productSettings: ProductSetting[] = [
     productCode: 'XRP_JPY',
     currencyCode: { real: 'JPY', virtual: 'XRP' },
     orderUnit: 0.1,
-    maxOrderSize: 10000
+    maxOrderSize: 10000,
+    executeOrderPhase: false,
   },
   {
     id: 'BTC_JPY',
@@ -29,7 +31,8 @@ export const productSettings: ProductSetting[] = [
     productCode: 'BTC_JPY',
     currencyCode: { real: 'JPY', virtual: 'BTC' },
     orderUnit: 0.001,
-    maxOrderSize: 50
+    maxOrderSize: 50,
+    executeOrderPhase: false,
   },
   {
     id: 'ETH_JPY',
@@ -37,7 +40,8 @@ export const productSettings: ProductSetting[] = [
     productCode: 'ETH_JPY',
     currencyCode: { real: 'JPY', virtual: 'ETH' },
     orderUnit: 0.01,
-    maxOrderSize: 50
+    maxOrderSize: 50,
+    executeOrderPhase: false,
   },
 ];
 
