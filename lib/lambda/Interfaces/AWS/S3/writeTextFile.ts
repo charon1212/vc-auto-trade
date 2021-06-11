@@ -1,4 +1,5 @@
 import * as AWS from 'aws-sdk'
+import { appLogger } from '../../../Common/log';
 
 const s3 = new AWS.S3();
 
@@ -8,8 +9,10 @@ const s3 = new AWS.S3();
  * @param body ファイルに書き込む文字列。
  * @returns 失敗した場合はfalse。
  */
- export const writeTextFile = async (filePath: string, body: string) => {
-  const bucketName = process.env.BucketName || ''
+export const writeTextFile = async (filePath: string, body: string) => {
+
+  const bucketName = process.env.BucketName || '';
+  appLogger.info(`▲▲AWS-S3-writeTextFile-CALL-${JSON.stringify({ bucketName, filePath, body, })}`);
   try {
     return await s3.putObject({
       Bucket: bucketName, Key: filePath, Body: body,

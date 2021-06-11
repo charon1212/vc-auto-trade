@@ -13,13 +13,14 @@ const getLongExecutionClassType = (productId: ProductId) => {
 
 export const setLongExecution = async (productId: ProductId, sortKey: string, data: ExecutionAggregated) => {
 
-  appLogger.info(`DynamoDB::setLongExecution, productId:${productId}, sortKey: ${sortKey}, data: ${JSON.stringify(data)}`);
+  const classType = getLongExecutionClassType(productId);
+  appLogger.info(`▲▲${productId}-AWS-DynamoDB-setLongExecution-CALL-${JSON.stringify({ classType, sortKey, data })}`);
 
   try {
     await db.put({
       TableName: processEnv.TableName,
       Item: {
-        ClassType: getLongExecutionClassType(productId),
+        ClassType: classType,
         SortKey: sortKey,
         data: data,
       }
@@ -43,6 +44,10 @@ export type LongExecutionDynamoDB = {
  * @param sotrKeyEnd ソートキーの終了。境界値は最終結果に含まれる。
  */
 export const searchLongExecutions = async (productId: ProductId, sortKeyStart: string, sotrKeyEnd: string) => {
+
+  const classType = getLongExecutionClassType(productId);
+  appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchLongExecutions-CALL-${JSON.stringify({ classType, sortKeyStart, sotrKeyEnd })}`);
+
   try {
     const res = await db.query({
       TableName: processEnv.TableName,
@@ -57,7 +62,7 @@ export const searchLongExecutions = async (productId: ProductId, sortKeyStart: s
         ':sk2': sotrKeyEnd,
       }
     }).promise();
-    appLogger.info(`DynamoDB::searchLongExecutions, productId:${productId}, result: ${JSON.stringify(res)}`);
+    appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchLongExecutions-RESULT-${JSON.stringify({ res })}`);
     return {
       count: res.Count,
       result: res.Items as LongExecutionDynamoDB[] | undefined,

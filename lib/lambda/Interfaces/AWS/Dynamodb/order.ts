@@ -42,6 +42,7 @@ export type OrderDynamoDB = {
  */
 export const setOrder = async (productId: ProductId, data: Order) => {
 
+  const classType = getOrderClassType(productId);
   const sortKey = await getSortKey(data.state, data.acceptanceId, data.orderDate);
   if (!sortKey) return;
 
@@ -50,7 +51,7 @@ export const setOrder = async (productId: ProductId, data: Order) => {
     orderDateTimestamp: data.orderDate.getTime(),
   }
 
-  appLogger.info(`DynamoDB::setLongExecution, ${JSON.stringify({ productId, sortKey, convertedData })}`);
+  appLogger.info(`▲▲${productId}-AWS-DynamoDB-setOrder-CALL-${JSON.stringify({ classType, sortKey, convertedData, })}`);
 
   try {
     await db.put({
@@ -87,11 +88,14 @@ const getSortKey = async (state: OrderState, acceptanceId: string, orderDate: Da
  */
 export const searchOrders = async (productId: ProductId, state: OrderState,) => {
 
+  const classType = getOrderClassType(productId);
   const stateCode = getStateCode(state);
   if (!stateCode) {
     await handleError(__filename, 'setOrder', 'code', 'stateCodeが取得できませんでした。', { productId, state, },);
     return { count: 0, result: [] };
   }
+
+  appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchOrders-CALL-${JSON.stringify({ classType, stateCode, })}`);
 
   try {
     const res = await db.query({
@@ -106,7 +110,7 @@ export const searchOrders = async (productId: ProductId, state: OrderState,) => 
         ':skprefix': stateCode,
       },
     }).promise();
-    appLogger.info(`DynamoDB::searchOrders, productId:${productId}, result: ${JSON.stringify(res)}`);
+    appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchOrders-RESULT-${JSON.stringify({ res, })}`);
     const resultItem = res.Items as { ClassType: string, SortKey: string, data: OrderSave, }[] | undefined;
     return {
       count: res.Count,
@@ -126,13 +130,14 @@ export const searchOrders = async (productId: ProductId, state: OrderState,) => 
 };
 
 export const deleteOrder = async (productId: ProductId, state: OrderState, acceptanceId: string, orderDate: Date,) => {
+  const classType = getOrderClassType(productId);
   const sortKey = await getSortKey(state, acceptanceId, orderDate);
-  appLogger.info(`DynamoDB::deleteOrder, productId:${productId}, sortKey: ${sortKey}`);
+  appLogger.info(`▲▲${productId}-AWS-DynamoDB-deleteOrder-CALL-${JSON.stringify({ classType, sortKey, })}`);
   try {
     await db.delete({
       TableName: processEnv.TableName,
       Key: {
-        ClassType: getOrderClassType(productId),
+        ClassType: classType,
         SortKey: sortKey,
       }
     }).promise();

@@ -13,7 +13,8 @@ const getExecutionClassType = (productId: ProductId) => {
 
 export const setExecution = async (productId: ProductId, sortKey: string, data: ExecutionAggregated[]) => {
 
-  appLogger.info(`DynamoDB::setExecution, productId:${productId}, sortKey: ${sortKey}, data: ${JSON.stringify(data)}`);
+  const classType = getExecutionClassType(productId);
+  appLogger.info(`▲▲${productId}-AWS-DynamoDB-setExecution-CALL-${JSON.stringify({ classType, sortKey, data, })}`);
 
   try {
     await db.put({
@@ -43,6 +44,9 @@ export type ExecutionDynamoDB = {
  * @param sotrKeyEnd ソートキーの終了。境界値は最終結果に含まれる。
  */
 export const searchExecutions = async (productId: ProductId, sortKeyStart: string, sotrKeyEnd: string) => {
+  const classType = getExecutionClassType(productId);
+  appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchExecutions-CALL-${JSON.stringify({ classType, sortKeyStart, sotrKeyEnd, })}`);
+
   try {
     const res = await db.query({
       TableName: processEnv.TableName,
@@ -52,12 +56,12 @@ export const searchExecutions = async (productId: ProductId, sortKeyStart: strin
         '#SK': 'SortKey',
       },
       ExpressionAttributeValues: {
-        ':pk': getExecutionClassType(productId),
+        ':pk': classType,
         ':sk1': sortKeyStart,
         ':sk2': sotrKeyEnd,
       }
     }).promise();
-    appLogger.info(`DynamoDB::searchExecutions, ${JSON.stringify({ productId, sortKeyStart, sotrKeyEnd, result: res })}`);
+    appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchExecutions-RESULT-${JSON.stringify({ res })}`);
     return {
       count: res.Count,
       result: res.Items as ExecutionDynamoDB[],
@@ -76,12 +80,14 @@ export const searchExecutions = async (productId: ProductId, sortKeyStart: strin
  * @returns 削除に成功すればtrue、失敗すればfalse。
  */
 export const deleteExecution = async (productId: ProductId, sortKey: string) => {
-  appLogger.info(`DynamoDB::deleteExecution, productId:${productId}, sortKey: ${sortKey}`);
+  const classType = getExecutionClassType(productId);
+  appLogger.info(`▲▲${productId}-AWS-DynamoDB-deleteExecution-CALL-${JSON.stringify({ classType, sortKey, })}`);
+
   try {
     await db.delete({
       TableName: processEnv.TableName,
       Key: {
-        ClassType: getExecutionClassType(productId),
+        ClassType: classType,
         SortKey: sortKey,
       }
     }).promise();
