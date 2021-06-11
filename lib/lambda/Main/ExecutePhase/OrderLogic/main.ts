@@ -106,7 +106,7 @@ export const main = async (input: Input): Promise<Order[]> => {
  */
 const sendBuyOrder = async (productSetting: ProductSetting, onSuccess: (order: Order) => void | Promise<void>) => {
   const sizeByUnit = 10; // とりあえず、1XRP買う。
-  const buyOrder = await sendOrder(productSetting.productCode, 'MARKET', 'BUY', sizeByUnit);
+  const buyOrder = await sendOrder(productSetting, 'MARKET', 'BUY', sizeByUnit);
   if (buyOrder) await onSuccess(buyOrder);
 };
 
@@ -116,13 +116,13 @@ const sendBuyOrder = async (productSetting: ProductSetting, onSuccess: (order: O
 const sendSellOrder = async (productSetting: ProductSetting, availableBalanceVirtual: number, buyPrice: number, onSuccess: (order: Order) => void | Promise<void>) => {
   const size = Math.floor(availableBalanceVirtual / productSetting.orderUnit); // 売れるだけ売る
   const price = moveUp(buyPrice * 1.005, 2, 'floor'); // 一応、少数以下2桁で四捨五入する。
-  const sellOrder = await sendOrder(productSetting.productCode, 'LIMIT', 'SELL', size, price);
+  const sellOrder = await sendOrder(productSetting, 'LIMIT', 'SELL', size, price);
   if (sellOrder) await onSuccess(sellOrder);
 };
 
 const sendStopLossOrder = async (productSetting: ProductSetting, availableBalanceVirtual: number, onSuccess: (order: Order) => void | Promise<void>) => {
   const size = Math.floor(availableBalanceVirtual / productSetting.orderUnit); // 売れるだけ売る
-  const sellOrder = await sendOrder(productSetting.productCode, 'MARKET', 'SELL', size,);
+  const sellOrder = await sendOrder(productSetting, 'MARKET', 'SELL', size,);
   if (sellOrder) await onSuccess(sellOrder);
 };
 
