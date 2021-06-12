@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { urlBaseBitflyer } from "../../../Common/const";
+import { urlBaseBitflyer, urlBaseGmoPrivate, urlBaseGmoPublic } from "../../../Common/const";
 import { appLogger } from "../../../Common/log";
 import * as crypto from 'crypto';
 import { processEnv } from "../../../Common/processEnv";
@@ -8,9 +8,9 @@ import { convertQueryParamsToStr } from "../util";
 
 export type RequestMethod = 'GET' | 'POST';
 /**
- * Bitflyer APIにリクエストを送信する。
+ * GMO APIにリクエストを送信する。
  *
- * @param params.uri リソースURI。urlBaseで定義した"https://api.bitflyer.com/v1/"以降の文字列。
+ * @param params.uri リソースURI。urlBaseで定義した"https://api.coin.z.com/public"以降の文字列。たぶん/v1/から始まる。
  * @param params.method GET, POST等のリクエストメソッド。
  * @param params.body リクエストボディ
  * @param params.headers リクエストヘッダ
@@ -24,19 +24,19 @@ export const sendRequest = async (params: { uri: string, method: RequestMethod, 
   const { uri, method, body, queryParams } = params;
   let headers;
   let path = uri;
-  let url = '';
+  let url = isPrivateHTTP ? urlBaseGmoPrivate : urlBaseGmoPublic;
 
   try {
 
     // クエリパラメータをURLに登録
-    url = urlBaseBitflyer + convertQueryParamsToStr(queryParams);
+    url += convertQueryParamsToStr(queryParams);
 
     // ヘッダー取得処理
     const timestamp = Date.now();
-    const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method, '/v1/' + path, params.body) : {};
+    const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method, path, params.body) : {};
     headers = { ...additionalHeaders, ...params.headers };
 
-    appLogger.info(`★★API-BITFLYER-REQUEST-${JSON.stringify({ params, url, method, headers, body, })}`);
+    appLogger.info(`★★API-GMO-REQUEST-${JSON.stringify({ params, url, method, headers, body, })}`);
 
   } catch (err) {
     await handleError(__filename, 'sendRequest', 'code', 'リクエスト前処理で失敗', { params, isPrivateHTTP, handleNot2xxStatusAsError, }, err);
@@ -56,7 +56,7 @@ export const sendRequest = async (params: { uri: string, method: RequestMethod, 
       return undefined;
     }
 
-    if (method === 'POST') appLogger.info(`★★API-BITFLYER-RESPONSE-${JSON.stringify({ url, json: await res.json(), })}`);
+    if (method === 'POST') appLogger.info(`★★API-GMO-RESPONSE-${JSON.stringify({ url, json: await res.json(), })}`);
     return res;
   } catch (err) {
     await handleError(__filename, 'sendRequest', 'code', 'API通信でエラー', { params, isPrivateHTTP, handleNot2xxStatusAsError, }, err);
@@ -83,9 +83,9 @@ export const getPrivateApiRequestHeader = (timestamp: number, method: string, pa
   const sign = crypto.createHmac('sha256', secretAccessKey).update(text).digest('hex');
 
   const headers = {
-    'ACCESS-KEY': apiKey,
-    'ACCESS-TIMESTAMP': timestamp.toString(),
-    'ACCESS-SIGN': sign,
+    'API-KEY': apiKey,
+    'API-TIMESTAMP': timestamp.toString(),
+    'API-SIGN': sign,
     'Content-Type': 'application/json',
   };
 

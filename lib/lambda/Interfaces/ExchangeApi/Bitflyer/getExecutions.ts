@@ -9,7 +9,7 @@ export type ExecutionBitflyer = {
   side: 'BUY' | 'SELL' | '', // 買い注文と売り注文のどちらで成立したか表す。板寄せで決まると空文字になりうる。
   price: number, // 約定価格
   size: number, // 約定量
-  exec_date: Date, // 約定に知事
+  exec_date: Date, // 約定日時
   buy_child_order_acceptance_id: string, // 約定の買い注文側の受付ID
   sell_child_order_acceptance_id: string, // 約定の売り注文側の受付ID
 }
