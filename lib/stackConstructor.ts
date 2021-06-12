@@ -50,7 +50,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     EnvName: envName,
     AKEY: accessKey,
     SKEY: secretAccessKey,
-    LogLevel: 'DEBUG',
+    LogLevel: isProduction ? 'INFO' : 'DEBUG',
     slackBotToken,
     slackChannelInfo,
     slackChannelError,
