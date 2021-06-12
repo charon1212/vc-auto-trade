@@ -1,3 +1,5 @@
+import { processEnv } from "../Common/processEnv";
+
 export type ProductSetting = {
   id: ProductId, // プロダクトを表す一意識別子。本システムで定義するコード値。DB保存の際のprefix等に利用する。
   productCode: ProductCode, // プロダクトコード。取引所APIの引数として渡すコード値。渡し先のAPI仕様に準拠して定義する。
@@ -15,7 +17,7 @@ export type ProductId = 'XRP_JPY' | 'BTC_JPY' | 'ETH_JPY' | 'GMO-BTC';
 export type ProductCode = 'XRP_JPY' | 'BTC_JPY' | 'ETH_JPY' | 'BTC';
 export type ExchangeCode = 'Bitflyer' | 'GMO';
 
-export const productSettings: ProductSetting[] = [
+const productSettingsProd: ProductSetting[] = [
   {
     id: 'XRP_JPY',
     exchangeCode: 'Bitflyer',
@@ -44,6 +46,10 @@ export const productSettings: ProductSetting[] = [
     executeOrderPhase: false,
   },
 ];
+
+const productSettingsDev: ProductSetting[] = productSettingsProd.map((productSettings) => productSettings);
+
+export const productSettings: ProductSetting[] = processEnv.EnvName === 'production' ? productSettingsProd : productSettingsDev;
 
 export const getProductSetting = (productId: ProductId) => {
   return productSettings.find((item) => (item.id === productId));
