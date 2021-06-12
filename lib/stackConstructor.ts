@@ -6,6 +6,7 @@ import * as s3 from '@aws-cdk/aws-s3';
 import * as dotenv from 'dotenv';
 import { AttributeType, Table } from '@aws-cdk/aws-dynamodb';
 import { Duration } from '@aws-cdk/core';
+import { LayerVersion } from '@aws-cdk/aws-lambda';
 
 /**
  * 構築するインフラを定義する
@@ -68,6 +69,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       id: 'rule' + env,
       cron: { minute: '*/1', hour: '*', day: '*', month: '*', year: '*' },
     },
+    layersArn: ['arn:aws:lambda:ap-northeast-1:072058574689:layer:VcAutoTradeLayer:1'],
   });
   dynamoTable.grantFullAccess(funcMain);
 
@@ -83,7 +85,8 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     schedule: {
       id: 'ruleTransDynamoData' + env,
       cron: { minute: '0', hour: '1', day: '*', month: '*', year: '*' }
-    }
+    },
+    layersArn: ['arn:aws:lambda:ap-northeast-1:072058574689:layer:VcAutoTradeLayer:1'],
   });
   s3Bucket.grantReadWrite(funcTransDynamoData as any); // なぜか型エラーが出て解決できない。。。苦肉のAs any。
   dynamoTable.grantReadData(funcTransDynamoData);
@@ -98,6 +101,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       environment: lambdaEnvVariables,
       timeoutSecond: 60,
       memorySize: 1024,
+      layersArn: ['arn:aws:lambda:ap-northeast-1:072058574689:layer:VcAutoTradeLayer:1'],
     });
     dynamoTable.grantFullAccess(funcDevelopmentTest);
   }
@@ -134,6 +138,7 @@ type LambdaProp = {
     id: string,
     cron: events.CronOptions,
   },
+  layersArn?: string[],
 };
 
 /**
@@ -146,12 +151,14 @@ type LambdaProp = {
  * @param params.timeoutSecond タイムアウト。秒数で指定する。
  * @param params.memorySize メモリサイズ。
  * @param params.schedule Cloud Watch Eventで定期実行する場合は指定する。IDは構築するCloud Watch Eventの一意識別子。cronは定期実行のタイミングを表すcron。例：{ minute: '0', hour: '0', day: '*', month: '*', year: '*' }は毎日AM９時(UTC 0時)に定期実行する。
+ * @param params.layersArn lambda関数に設定するAWS Lambda LayerのARNの配列
  * @returns 構築したLambda関数。
  */
 const makeLambdaFunc = (params: LambdaProp) => {
-  const { scope, id, codeDirPath, handler, environment, timeoutSecond, memorySize, } = params;
+  const { scope, id, codeDirPath, handler, environment, timeoutSecond, memorySize, layersArn, } = params;
 
   const timeout = (timeoutSecond === undefined) ? undefined : Duration.seconds(timeoutSecond);
+  const layers = layersArn?.map((arn) => (LayerVersion.fromLayerVersionArn(scope, id + '-layer-' + arn, arn)));
 
   const func = new lambda.Function(scope, id, {
     runtime: lambda.Runtime.NODEJS_14_X,
@@ -160,6 +167,7 @@ const makeLambdaFunc = (params: LambdaProp) => {
     environment: environment,
     timeout: timeout as any,
     memorySize: memorySize,
+    layers: layers,
   });
 
   if (params.schedule) {
