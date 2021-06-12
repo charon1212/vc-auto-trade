@@ -17,10 +17,11 @@ import { LayerVersion } from '@aws-cdk/aws-lambda';
 export const stackConstructor = (scope: cdk.Construct, env: string) => {
 
   dotenv.config(); // load .env file.
-  const { accessKey, secretAccessKey, slackBotToken, slackChannelProdError, slackChannelProdInfo, slackChannelDevError, slackChannelDevInfo, } = getEnvSettings();
+  const { accessKey, secretAccessKey, slackBotToken, slackChannelProdError, slackChannelProdInfo, slackChannelDevError, slackChannelDevInfo, awsLayerArnList, } = getEnvSettings();
 
   const isProduction = (env === '');
   const envName = isProduction ? 'production' : 'dev';
+  const layerArnList = awsLayerArnList.split(',');
 
   const slackChannelInfo = isProduction ? slackChannelProdInfo : slackChannelDevInfo;
   const slackChannelError = isProduction ? slackChannelProdError : slackChannelDevError;
@@ -69,7 +70,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       id: 'rule' + env,
       cron: { minute: '*/1', hour: '*', day: '*', month: '*', year: '*' },
     },
-    layersArn: ['arn:aws:lambda:ap-northeast-1:072058574689:layer:VcAutoTradeLayer:1'],
+    layersArn: layerArnList,
   });
   dynamoTable.grantFullAccess(funcMain);
 
@@ -86,7 +87,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       id: 'ruleTransDynamoData' + env,
       cron: { minute: '0', hour: '1', day: '*', month: '*', year: '*' }
     },
-    layersArn: ['arn:aws:lambda:ap-northeast-1:072058574689:layer:VcAutoTradeLayer:1'],
+    layersArn: layerArnList,
   });
   s3Bucket.grantReadWrite(funcTransDynamoData as any); // なぜか型エラーが出て解決できない。。。苦肉のAs any。
   dynamoTable.grantReadData(funcTransDynamoData);
@@ -101,7 +102,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       environment: lambdaEnvVariables,
       timeoutSecond: 60,
       memorySize: 1024,
-      layersArn: ['arn:aws:lambda:ap-northeast-1:072058574689:layer:VcAutoTradeLayer:1'],
+      layersArn: layerArnList,
     });
     dynamoTable.grantFullAccess(funcDevelopmentTest);
   }
@@ -116,8 +117,9 @@ const getEnvSettings = () => {
   const slackChannelProdInfo = process.env.SLACK_API_PROD_INFOREPORT_CHANNEL || '';
   const slackChannelDevError = process.env.SLACK_API_DEV_ERRORREPORT_CHANNEL || '';
   const slackChannelDevInfo = process.env.SLACK_API_DEV_INFOREPORT_CHANNEL || '';
+  const awsLayerArnList = process.env.AWS_LAYER_ARN_LIST || '';
 
-  const obj = { accessKey, secretAccessKey, slackBotToken, slackChannelProdError, slackChannelProdInfo, slackChannelDevError, slackChannelDevInfo, };
+  const obj = { accessKey, secretAccessKey, slackBotToken, slackChannelProdError, slackChannelProdInfo, slackChannelDevError, slackChannelDevInfo, awsLayerArnList, };
 
   Object.values(obj).forEach((v) => {
     if (!v) throw new Error('設定値が足りません。'); // falsyな値がないかチェック。
