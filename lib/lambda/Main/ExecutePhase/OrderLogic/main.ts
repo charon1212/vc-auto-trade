@@ -78,7 +78,7 @@ export const main = async (input: Input): Promise<Order[]> => {
     if (latestExecutionAggregated && productContext.buyOrderPrice) {
       // 直近の約定価格が、買った時の値段の3%を下回っていたら、成行で売って損切に。
       if (latestExecutionAggregated.price < productContext.buyOrderPrice * 0.97) {
-        const cancelResult = await cancelOrder(productSetting.productCode, undefined, productContext.orderAcceptanceId);
+        const cancelResult = await cancelOrder(productSetting, undefined, productContext.orderAcceptanceId);
         if (cancelResult) await sendStopLossOrder(productSetting, balanceVirtual.available, async (sellOrder) => { // 損切注文を発注できた場合
           newOrders.push(sellOrder);
           productContext.orderPhase = 'StopLoss';

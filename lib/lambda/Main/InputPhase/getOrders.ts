@@ -26,7 +26,7 @@ export const getOrders = async (productSetting: ProductSetting,) => {
   const syncronizeOrderFuncList = orderListFromDb.map((order) => {
     return async () => {
       if (order.parentSortMethod === 'NORMAL') {
-        const orderFromApi = (await getOrder(productSetting.productCode, undefined, order.acceptanceId))[0];
+        const orderFromApi = (await getOrder(productSetting, undefined, order.acceptanceId))[0];
         const beforeState = order.state;
         if (orderFromApi) {
           // 同期処理

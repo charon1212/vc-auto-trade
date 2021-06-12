@@ -5,6 +5,7 @@ import * as crypto from 'crypto';
 import { processEnv } from "../../../Common/processEnv";
 import handleError from "../../../HandleError/handleError";
 
+export type RequestMethod = 'GET' | 'POST';
 /**
  * Bitflyer APIにリクエストを送信する。
  *
@@ -17,7 +18,7 @@ import handleError from "../../../HandleError/handleError";
  * @param handleNot2xxStatusAsError 200系以外のHTTPStatusをエラーとして扱う場合はtrue、そうでない場合はfalse。trueにすると、200系以外のステータスが来た場合はundefinedを返す。
  * @returns node-fetchのリクエストレスポンス。
  */
-export const sendRequest = async (params: { uri: string, method: string, body?: object, headers?: { [key: string]: string }, queryParams?: { [key: string]: string | undefined } }, isPrivateHTTP: boolean, handleNot2xxStatusAsError: boolean,) => {
+export const sendRequest = async (params: { uri: string, method: RequestMethod, body?: object, headers?: { [key: string]: string }, queryParams?: { [key: string]: string | undefined } }, isPrivateHTTP: boolean, handleNot2xxStatusAsError: boolean,) => {
 
   const { uri, method, body, queryParams } = params;
   let headers;
@@ -41,7 +42,7 @@ export const sendRequest = async (params: { uri: string, method: string, body?: 
     const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method, '/v1/' + path, params.body) : {};
     headers = { ...additionalHeaders, ...params.headers };
 
-    appLogger.info(`★★sendRequest: ${JSON.stringify({ params, url, headers, })}`);
+    appLogger.info(`★★API-REQUEST-${JSON.stringify({ params, url, method, headers, body, })}`);
 
   } catch (err) {
     await handleError(__filename, 'sendRequest', 'code', 'リクエスト前処理で失敗', { params, isPrivateHTTP, handleNot2xxStatusAsError, }, err);
@@ -65,6 +66,7 @@ export const sendRequest = async (params: { uri: string, method: string, body?: 
       return undefined;
     }
 
+    if (method === 'POST') appLogger.info(`★★API-RESPONSE-${JSON.stringify({ url, json: await res.json(), })}`);
     return res;
   } catch (err) {
     await handleError(__filename, 'sendRequest', 'code', 'API通信でエラー', { params, isPrivateHTTP, handleNot2xxStatusAsError, }, err);

@@ -63,7 +63,6 @@ export const getParentOrders = async (productCode: ProductCode, params?: GetPare
       exec.exec_date = convertStringToDate(exec.exec_date);
       exec.parent_order_date = convertStringToDate(exec.parent_order_date);
     }
-    appLogger.info(`apiGetData: ${JSON.stringify(json)}`);
     return json as ParentOrderBitflyer[];
   } catch (err) {
     await handleError(__filename, 'getParentOrders', 'code', 'API通信でエラー', { productCode, params, pagination, }, err);

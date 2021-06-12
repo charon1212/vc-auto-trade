@@ -4,6 +4,7 @@ import handleError from "../../HandleError/handleError";
 import { getProductSetting, ProductCode, ProductSetting } from "../../Main/productSettings";
 import { sendOrder as sendOrderBitflyer } from "./Bitflyer/sendOrder";
 import { cancelOrder as cancelOrderBitflyer } from './Bitflyer/cancelOrder';
+import { appLogger } from "../../Common/log";
 
 export type GetChildOrderResult = {
   id: number,
@@ -18,13 +19,16 @@ export type GetChildOrderResult = {
 
 /**
  * 全ての注文の一覧を取得する。
- * @param productCode プロダクトコード。
+ * @param productSetting プロダクト設定。
  * @returns 注文の一覧。
  */
-export const getAllOrders = async (productCode: ProductCode): Promise<GetChildOrderResult[]> => {
+export const getAllOrders = async (productSetting: ProductSetting): Promise<GetChildOrderResult[]> => {
 
-  const orders = await getOrders(productCode);
-  return orders.map((order) => convertOrder(order));
+  appLogger.info(`★★${productSetting.id}-API-getAllOrders-CALL`);
+  const orders = await getOrders(productSetting.productCode);
+  const result = orders.map((order) => convertOrder(order));
+  appLogger.info(`★★${productSetting.id}-API-getAllOrders-RESULT-${JSON.stringify({ result })}`);
+  return result;
 
 };
 
@@ -48,36 +52,45 @@ export type OrderStateExchangeApi = 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTE
 
 /**
  * 特定の状態の注文の一覧を取得する。
- * @param productCode プロダクトコード。
+ * @param productSetting プロダクト設定。
  * @param state 検索対象の状態。
  * @returns 注文の一覧。
  */
-export const getStateOrders = async (productCode: ProductCode, state: OrderStateExchangeApi): Promise<GetChildOrderResult[]> => {
-  const orders = await getOrders(productCode, { child_order_state: state });
-  return orders.map((order) => convertOrder(order));
+export const getStateOrders = async (productSetting: ProductSetting, state: OrderStateExchangeApi): Promise<GetChildOrderResult[]> => {
+  appLogger.info(`★★${productSetting.id}-API-getStateOrders-CALL-${JSON.stringify({ state, })}`);
+  const orders = await getOrders(productSetting.productCode, { child_order_state: state });
+  const result = orders.map((order) => convertOrder(order));
+  appLogger.info(`★★${productSetting.id}-API-getStateOrders-RESULT-${JSON.stringify({ result, })}`);
+  return result;
 };
 
 /**
  * 特定の注文を取得する。
- * @param productCode プロダクトコード。
+ * @param productSetting プロダクト設定。
  * @param orderId 検索対象の注文ID。
  * @param acceptanceId 検索対象の受付ID。
  * @returns 特定の注文。配列形式で返却する。
  */
-export const getOrder = async (productCode: ProductCode, orderId?: string, acceptanceId?: string) => {
-  const orders = await getOrders(productCode, { child_order_id: orderId, child_order_acceptance_id: acceptanceId });
-  return orders.map((order) => convertOrder(order));
+export const getOrder = async (productSetting: ProductSetting, orderId?: string, acceptanceId?: string) => {
+  appLogger.info(`★★${productSetting.id}-API-getOrder-CALL-${JSON.stringify({ orderId, acceptanceId, })}`);
+  const orders = await getOrders(productSetting.productCode, { child_order_id: orderId, child_order_acceptance_id: acceptanceId });
+  const result = orders.map((order) => convertOrder(order));
+  appLogger.info(`★★${productSetting.id}-API-getOrder-RESULT-${JSON.stringify({ result, })}`);
+  return result;
 };
 
 /**
  * 特定の親注文に関連する子注文の一覧を取得する。
- * @param productCode プロダクトコード。
+ * @param productSetting プロダクト設定。
  * @param parentOrderId 親注文の注文ID。
  * @returns 関連する子注文の一覧。
  */
-export const getRelatedChildOrders = async (productCode: ProductCode, parentOrderId: string,): Promise<GetChildOrderResult[]> => {
-  const orders = await getOrders(productCode, { parent_order_id: parentOrderId });
-  return orders.map((order) => convertOrder(order));
+export const getRelatedChildOrders = async (productSetting: ProductSetting, parentOrderId: string,): Promise<GetChildOrderResult[]> => {
+  appLogger.info(`★★${productSetting.id}-API-getRelatedChildOrders-CALL-${JSON.stringify({ parentOrderId, })}`);
+  const orders = await getOrders(productSetting.productCode, { parent_order_id: parentOrderId });
+  const result = orders.map((order) => convertOrder(order));
+  appLogger.info(`★★${productSetting.id}-API-getRelatedChildOrders-RESULT-${JSON.stringify({ result, })}`);
+  return result;
 };
 
 /**
@@ -91,6 +104,7 @@ export const getRelatedChildOrders = async (productCode: ProductCode, parentOrde
  */
 export const sendOrder = async (productSetting: ProductSetting, orderType: 'LIMIT' | 'MARKET', side: 'BUY' | 'SELL', sizeUnit: number, price?: number) => {
 
+  appLogger.info(`★★${productSetting.id}-API-sendOrder-CALL-${JSON.stringify({ orderType, side, sizeUnit, price, })}`);
   const size = await getOrderSize(productSetting, sizeUnit);
   if (!size) return undefined;
 
@@ -110,32 +124,36 @@ export const sendOrder = async (productSetting: ProductSetting, orderType: 'LIMI
       price,
     }],
   };
+  appLogger.info(`★★${productSetting.id}-API-sendOrder-RESULT-${JSON.stringify({ result: order, })}`);
   return order;
 
 };
 
 /**
  * 注文をキャンセルする。
- * @param productCode プロダクトコード。
+ * @param productSetting プロダクト設定。
  * @param orderId 注文ID。
  * @param orderAcceptanceId 注文受付ID。
  * @returns 成功時はtrue、失敗時はfalse。
  */
-export const cancelOrder = async (productCode: ProductCode, orderId?: string, orderAcceptanceId?: string) => {
+export const cancelOrder = async (productSetting: ProductSetting, orderId?: string, orderAcceptanceId?: string) => {
 
+  appLogger.info(`★★${productSetting.id}-API-cancelOrder-CALL-${JSON.stringify({ orderId, orderAcceptanceId, })}`);
   if (!orderId && !orderAcceptanceId) {
-    await handleError(__filename, 'cancelOrder', 'code', '注文IDか注文受付IDのいずれかは必須です', { productCode, orderId, orderAcceptanceId, });
+    await handleError(__filename, 'cancelOrder', 'code', '注文IDか注文受付IDのいずれかは必須です', { productSetting, orderId, orderAcceptanceId, });
     return false;
   }
 
-  return await cancelOrderBitflyer(productCode, { child_order_id: orderId, child_order_acceptance_id: orderAcceptanceId });
+  const result = await cancelOrderBitflyer(productSetting.productCode, { child_order_id: orderId, child_order_acceptance_id: orderAcceptanceId });
+  appLogger.info(`★★${productSetting.id}-API-cancelOrder-RESULT-${JSON.stringify({ result, })}`);
+  return result;
 
 };
 
 /**
  * 実際の注文数量を取得する。
  *
- * @param productCode プロダクトコード。
+ * @param productSetting プロダクト設定。
  * @param sizeByUnit 最小単位を単位とした注文数量。正の整数で指定する。
  * @returns 最小単位の整数倍で表した注文数量。
  */

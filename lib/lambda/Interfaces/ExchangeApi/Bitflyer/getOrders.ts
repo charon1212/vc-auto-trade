@@ -64,7 +64,6 @@ export const getOrders = async (productCode: ProductCode, params?: GetOrderParam
       exec.exec_date = convertStringToDate(exec.exec_date);
       exec.child_order_date = convertStringToDate(exec.child_order_date);
     }
-    appLogger.info(`apiGetData: ${JSON.stringify(json)}`);
     return json as OrderBitflyer[];
   } catch (err) {
     await handleError(__filename, 'getOrders', 'code', 'API通信でエラー', { productCode, params, pagination, }, err);

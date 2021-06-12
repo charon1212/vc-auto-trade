@@ -49,7 +49,6 @@ export const getExecutions = async (productCode: ProductCode, count: number, bef
       // 日付を文字列からDateへ変換する。
       exec.exec_date = convertStringToDate(exec.exec_date);
     }
-    appLogger.info(`apiGetData: ${JSON.stringify(json)}`);
     return json as ExecutionBitflyer[];
   } catch (err) {
     await handleError(__filename, 'getExecutions', 'code', 'API通信でエラー', { productCode, count, before, after }, err);

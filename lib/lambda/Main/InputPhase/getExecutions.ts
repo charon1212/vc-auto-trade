@@ -10,7 +10,7 @@ export const getExecutions = async (productSetting: ProductSetting, std: number)
   // 基準時刻の1分前を取得する。
   const stdBefore1min = std - 60 * 1000;
 
-  const executions = await getExecutionsFromApi(stdBefore1min, productSetting.productCode, lastExecutionId);
+  const executions = await getExecutionsFromApi(stdBefore1min, productSetting, lastExecutionId);
   return executions;
 
 };

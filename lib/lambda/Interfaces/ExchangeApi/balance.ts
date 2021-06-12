@@ -1,3 +1,4 @@
+import { appLogger } from '../../Common/log';
 import { Balance } from '../DomainType';
 import { getBalances as getBalancesBitflyer } from './Bitflyer/getBalances';
 
@@ -7,11 +8,14 @@ import { getBalances as getBalancesBitflyer } from './Bitflyer/getBalances';
  */
 export const getBalances = async (): Promise<Balance[]> => {
 
+  appLogger.info(`★★API-getBalances-CALL`);
   const res = await getBalancesBitflyer();
-  return res.map((value) => ({
+  const result = res.map((value) => ({
     currencyCode: value.currency_code,
     amount: value.amount,
     available: value.available,
   }));
+  appLogger.info(`★★API-getBalances-RESULT-${JSON.stringify({ result })}`);
+  return result;
 
 };
