@@ -1,6 +1,7 @@
 import { processEnv } from "./processEnv";
 
-const logLevelMap = new Map([['ERROR', 1], ['WARN', 2], ['INFO', 3], ['DEBUG', 4], ['TRACE', 5],]);
+export type VCATLogLevel = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG' | 'TRACE';
+const logLevelMap: Map<VCATLogLevel, number> = new Map([['ERROR', 1], ['WARN', 2], ['INFO', 3], ['DEBUG', 4], ['TRACE', 5],]);
 const maxLogLevel = logLevelMap.get(processEnv.LogLevel);
 
 const putLog = (log: any, logLevel: number, logger: (log: any) => void) => {
