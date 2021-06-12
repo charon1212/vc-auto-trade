@@ -17,9 +17,6 @@ import { StandardTime } from "./StandardTime";
 
 export const entry = async () => {
 
-  const now = new Date();
-  const before1min = new Date(now.getTime() - 60 * 1000);
-
   await importProductContextFromDb();
 
   const promiseList: Promise<any>[] = [];
