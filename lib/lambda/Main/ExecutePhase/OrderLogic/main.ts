@@ -29,7 +29,7 @@ export const main = async (input: Input): Promise<Order[]> => {
 
   /** ■■ 発注後の場合、注文の状態を確認して状態遷移する ■■ */
   if (productContext.afterSendOrder) {
-    await judgeOrderSuccess(productContext.orderAcceptanceId!, orders,
+    await judgeOrderSuccess(productSetting, productContext.orderAcceptanceId!, orders,
       async (order) => { // 成功したため、次のフェーズに遷移
         const beforeOrderPhase = productContext.orderPhase;
         const afterOrderPhase = getNextOrderPhase(beforeOrderPhase);
@@ -40,6 +40,7 @@ export const main = async (input: Input): Promise<Order[]> => {
           productContext.buyOrderPrice = undefined;
         }
         productContext.orderPhase = afterOrderPhase;
+        appLogger.info(`〇〇〇${productSetting.id}-ChangePhase-${beforeOrderPhase}→${afterOrderPhase}`);
         await sendSlackMessage(`★Phase: ${beforeOrderPhase} => ${afterOrderPhase}`, false);
       }, async (order) => { // 失敗したため、再度発注状態に戻る
         productContext.afterSendOrder = false;
@@ -51,7 +52,7 @@ export const main = async (input: Input): Promise<Order[]> => {
   const newOrders: Order[] = [];
   if (productContext.orderPhase === 'Buy' && !productContext.afterSendOrder && canMakeNewOrder(productContext)) {
     // 買いのタイミングの場合、買い注文を入れる。
-    const judgeResult = judgeBuyTiming(shortAggregatedExecutions);
+    const judgeResult = judgeBuyTiming(productSetting, shortAggregatedExecutions);
     if (judgeResult) {
       await sendBuyOrder(productSetting, async (buyOrder) => { // 買い注文に成功した場合の処理
         productContext.afterSendOrder = true;
@@ -82,6 +83,7 @@ export const main = async (input: Input): Promise<Order[]> => {
         if (cancelResult) await sendStopLossOrder(productSetting, balanceVirtual.available, async (sellOrder) => { // 損切注文を発注できた場合
           newOrders.push(sellOrder);
           productContext.orderPhase = 'StopLoss';
+          appLogger.info(`〇〇〇${productSetting.id}-ChangePhase-Sell→StopLoss`);
           productContext.afterSendOrder = true;
           productContext.orderAcceptanceId = sellOrder.acceptanceId;
           productContext.startBuyTimestamp = Date.now() + 60 * 60 * 1000; // 1時間後にする。
@@ -93,6 +95,7 @@ export const main = async (input: Input): Promise<Order[]> => {
     const startBuyTimestamp = productContext.startBuyTimestamp;
     if (startBuyTimestamp && Date.now() > startBuyTimestamp) {
       productContext.orderPhase = 'Buy';
+      appLogger.info(`〇〇〇${productSetting.id}-ChangePhase-Wait→Buy`);
       productContext.startBuyTimestamp = undefined;
     }
   }
@@ -152,13 +155,14 @@ const getNextOrderPhase = (phase?: OrderPhase): OrderPhase | undefined => {
  * @param onSuccess 完了した時の注文に対する処理
  * @param onFail 失敗(キャンセル、期限切れ、Rejected)した時の注文に対する処理
  */
-const judgeOrderSuccess = async (acceptanceId: string, orderList: Order[], onSuccess: (order: Order) => Promise<void>, onFail: (order: Order) => Promise<void>) => {
+const judgeOrderSuccess = async (productSetting: ProductSetting, acceptanceId: string, orderList: Order[], onSuccess: (order: Order) => Promise<void>, onFail: (order: Order) => Promise<void>) => {
 
   const targetOrder = orderList.find((order) => (order.acceptanceId === acceptanceId));
   if (!targetOrder) {
     await handleError(__filename, 'judgeOrderSuccess', 'code', '注文待機中に、対象の注文が見つかりませんでした。', { acceptanceId, orderList, });
     return;
   }
+  appLogger.info(`〇〇〇${productSetting.id}-TargetOrder-${JSON.stringify({ targetOrder })}`);
   const failedStateList: OrderState[] = ['CANCELED', 'EXPIRED', 'REJECTED'];
   if (failedStateList.includes(targetOrder.state)) {// 注文に失敗した場合
     await onFail(targetOrder);
@@ -213,7 +217,7 @@ const makePriceHistory = (list: ExecutionAggregated[], interval: number) => {
  * @param shortAggregatedExecutions 短期集計約定リスト。10秒間隔で今今は2時間分取得できる。
  * @returns 買いのタイミングならtrue、そうでなければfalse。
  */
-const judgeBuyTiming = (shortAggregatedExecutions: ExecutionAggregated[],) => {
+const judgeBuyTiming = (productSetting: ProductSetting, shortAggregatedExecutions: ExecutionAggregated[],) => {
 
   if (shortAggregatedExecutions.length === 0) return false;
   const priceHistory = makePriceHistory(shortAggregatedExecutions, 10 * 1000);
@@ -227,20 +231,40 @@ const judgeBuyTiming = (shortAggregatedExecutions: ExecutionAggregated[],) => {
   // 現在価格と平均価格の比
   const relativeIndexRate = (priceNow - totalAverage) / priceNow;
 
+  if (moveAverage10.length < 40) return false;
+  if (moveAverage40.length < 40) return false;
+
   let moveAveLogStr = '';
   for (let i = 0; i < 40; i++) moveAveLogStr += (moveAverage10[i] <= moveAverage40[i]) ? 'ー' : '＋';
-  appLogger.info(`◇◇◇index: ${relativeIndexRate}◇◇◇
-${moveAveLogStr}`);
-
-  // 2時間平均よりも0.25%～1.5%下に位置しない
-  if (relativeIndexRate < -0.015 || relativeIndexRate > -0.0025) return false;
-  // 直近6点に対し、短期移動平均線が長期移動平均線を下回る場合は買わない。
-  for (let i = 0; i < 6; i++) if (moveAverage10[i] <= moveAverage40[i]) return false;
-  // 直近40点に対し、長期移動平均線が短期移動平均線を上回る点が10点以上ある。
+  let latestShortIsAboveLong = true;
+  for (let i = 0; i < 6; i++) if (moveAverage10[i] <= moveAverage40[i]) latestShortIsAboveLong = false;
   let countShortAboveLongBelow = 0;
   for (let i = 0; i < 40; i++) if (moveAverage10[i] < moveAverage40[i]) countShortAboveLongBelow++;
-  if (countShortAboveLongBelow >= 10) return true;
-  return false;
+
+  /**
+   * 買い条件は、次の3条件をすべて満たすこと。
+   *   ①最近接取引価格が、2時間平均の98.5%～99.75%に位置する。
+   *   ②直近6点は、短期移動平均線が長期移動平均線を上回る。(ゴールデンクロス→デッドロックの間)
+   *   ③直近40点に対し、長期移動平均線が短期移動平均線を10点以上上回る。
+   */
+  let judgeResult: boolean;
+  let reasonStr = '';
+  if (relativeIndexRate < -0.015 || relativeIndexRate > -0.0025) { // ①
+    judgeResult = false;
+    reasonStr = '①';
+  } else if (!latestShortIsAboveLong) { // ②
+    judgeResult = false;
+    reasonStr = '②';
+  } else if (countShortAboveLongBelow < 10) { // ③
+    judgeResult = false;
+    reasonStr = '③';
+  } else {
+    judgeResult = true;
+  }
+
+  appLogger.info(`〇〇〇${productSetting.id}-Judge-Buy-${JSON.stringify({ judgeResult, reasonStr, relativeIndexRate, moveAveLogStr, })}`);
+
+  return judgeResult;
 
 };
 

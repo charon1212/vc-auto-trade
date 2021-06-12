@@ -45,8 +45,8 @@ export const getOrders = async (productSetting: ProductSetting,) => {
         resultOrderList.push({ order, beforeState: order.state });
         const orderFromApi = (await getParentOrder(productSetting.productCode, order.acceptanceId));
         const orderDetailFromApi = await getParentOrderDetail(productSetting.productCode, { parent_order_acceptance_id: order.acceptanceId });
-        appLogger.info('▼▼▼特殊注文のAPI取得データ▼▼▼');
-        appLogger.info(JSON.stringify({ orderFromApi, orderDetailFromApi }));
+        appLogger.debug('▼▼▼特殊注文のAPI取得データ▼▼▼');
+        appLogger.debug(JSON.stringify({ orderFromApi, orderDetailFromApi }));
         // throw new Error('未実装');
       }
     };
