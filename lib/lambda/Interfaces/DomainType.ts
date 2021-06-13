@@ -20,42 +20,33 @@ export type Execution = {
   executionDate: Date, // 約定日時。
 };
 
-export type OrderType = 'LIMIT' | 'MARKET' | 'STOP' | 'STOP_LIMIT' | 'TRAIL';
+export type OrderType = 'LIMIT' | 'MARKET' | 'STOP';
 export type OrderSide = 'BUY' | 'SELL';
-export type ParentOrderMethod = 'NORMAL' | 'SIMPLE' | 'IFD' | 'OCO' | 'IFDOCO';
-export type OrderState = 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTED' | 'COMPLETED' | 'UNKNOWN';
+export type OrderState = 'UNKNOWN' | 'ACTIVE' | 'COMPLETED' | 'INVALID';
 
 /**
  * 自分が発注した注文情報。
  * コメントが★から始まるプロパティは、発注時に入力する情報。
  * それ以外は、発注後に同期処理で決まる値。
  *
- * 特殊注文におけるOrder.stateは、次のロジックで決定する。
- * - 優先順位を「 ACTIVE > UNKNOWN > REJECTED > COMPLETED > CANCELED > EXPIRED」とし、この順にchildOrderListの中で存在するstateを選択する。
  */
-export type Order = {
-  id?: number, // ページング用の通し番号
-  orderId?: string, // 注文ID
-  acceptanceId: string, // ★注文受付ID
-
-  parentSortMethod: ParentOrderMethod, // ★注文方法。NORMALは通常注文、それ以外は特殊注文。
+export type SimpleOrder = {
+  id: string, // 注文を一意に識別するID。
+  idGmo?: number, // GMOの注文の場合は必須。
+  idBitflyer?: { // Bitflyerの注文の場合は必須。
+    id?: number,
+    orderId?: string,
+    acceptanceId: string,
+  },
   orderDate: Date, // ★発注日時
-
-  state: OrderState, // 注文の状態。通常注文の場合はchildOrderList[0].stateと同じ。特殊注文の場合は、ドキュメントコメントに記載のロジックで決定する。
-
-  childOrderList: { // 注文の中身を表す配列。通常注文とSIMPLE注文は1個、IFDとOCO注文は2個、IFDOCO注文は3個
+  state: OrderState, // ★注文の状態。通常注文の場合はchildOrderList[0].stateと同じ。特殊注文の場合は、ドキュメントコメントに記載のロジックで決定する。
+  main: {
     orderType: OrderType, // ★注文の種類
     side: OrderSide, // ★売り注文・買い注文
     size: number, // ★注文数量
-    price?: number, // ★指値。orderTypeがLIMIT, STOP_LIMITの場合に必須。
-    triggerPrice?: number, // ★トリガー価格。orderTypeがSTOP, STOP_LIMITの場合に必須。
-    offset?: number, // ★トレール幅。orderTypeがTRAILの場合に必須。
+    price?: number, // ★指値。
     averagePrice?: number, // 平均取引価格。
-    state: OrderState, // 注文の状態
-    outstandingSize?: number, // 未約定の量
-    cancelSize?: number, // キャンセルした量
-    executedSize?: number, // 約定した量
-  }[],
+  },
 };
 
 /**

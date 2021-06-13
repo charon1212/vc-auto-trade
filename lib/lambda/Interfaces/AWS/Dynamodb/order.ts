@@ -2,7 +2,7 @@ import { appLogger } from "../../../Common/log";
 import { processEnv } from "../../../Common/processEnv";
 import handleError from "../../../HandleError/handleError";
 import { ProductId } from "../../../Main/productSettings";
-import { Order, OrderState } from "../../DomainType";
+import { SimpleOrder, OrderState } from "../../DomainType";
 import { db } from "./db";
 
 const suffixOrder = 'ORDER';
@@ -14,24 +14,22 @@ const getOrderClassType = (productId: ProductId) => {
 const stateMap = [
   { state: 'UNKNOWN', stateCode: 'UNK' },
   { state: 'ACTIVE', stateCode: 'ACT' },
-  { state: 'REJECTED', stateCode: 'REJ' },
   { state: 'COMPLETED', stateCode: 'COM' },
-  { state: 'CANCELED', stateCode: 'CAN' },
-  { state: 'EXPIRED', stateCode: 'EXP' },
+  { state: 'INVALID', stateCode: 'INV' },
 ];
 const getStateCode = (state: OrderState) => {
   return stateMap.find((item) => item.state === state)?.stateCode;
 };
 
 /** 保存用のOrder。日付型は文字列で保存されてしまうため、別途Unix Timestampを保存する。 */
-type OrderSave = Order & {
+type OrderSave = SimpleOrder & {
   orderDateTimestamp: number,
 };
 
 export type OrderDynamoDB = {
   ClassType: string,
   SortKey: string,
-  data: Order,
+  data: SimpleOrder,
 }
 
 /**
@@ -40,10 +38,10 @@ export type OrderDynamoDB = {
  * @param sortKey 
  * @param data 
  */
-export const setOrder = async (productId: ProductId, data: Order) => {
+export const setOrder = async (productId: ProductId, data: SimpleOrder) => {
 
   const classType = getOrderClassType(productId);
-  const sortKey = await getSortKey(data.state, data.acceptanceId, data.orderDate);
+  const sortKey = await getSortKey(data.state, data.id, data.orderDate);
   if (!sortKey) return;
 
   const convertedData: OrderSave = {
@@ -68,17 +66,13 @@ export const setOrder = async (productId: ProductId, data: Order) => {
 
 };
 
-const getSortKey = async (state: OrderState, acceptanceId: string, orderDate: Date,) => {
+const getSortKey = async (state: OrderState, id: string, orderDate: Date,) => {
   const stateCode = getStateCode(state);
   if (!stateCode) {
-    await handleError(__filename, 'getSortKey', 'code', 'stateCodeが取得できませんでした。', { state, acceptanceId, orderDate, },);
+    await handleError(__filename, 'getSortKey', 'code', 'stateCodeが取得できませんでした。', { state, id, orderDate, },);
     return undefined;
   }
-  if (acceptanceId.length !== 25) {
-    await handleError(__filename, 'getSortKey', 'code', '受付IDの桁数が25桁ではありません。', { state, acceptanceId, orderDate, },);
-    return undefined;
-  }
-  return stateCode + orderDate.getTime().toString() + acceptanceId;
+  return stateCode + orderDate.getTime().toString() + id;
 };
 
 /**
@@ -129,9 +123,9 @@ export const searchOrders = async (productId: ProductId, state: OrderState,) => 
   }
 };
 
-export const deleteOrder = async (productId: ProductId, state: OrderState, acceptanceId: string, orderDate: Date,) => {
+export const deleteOrder = async (productId: ProductId, state: OrderState, id: string, orderDate: Date,) => {
   const classType = getOrderClassType(productId);
-  const sortKey = await getSortKey(state, acceptanceId, orderDate);
+  const sortKey = await getSortKey(state, id, orderDate);
   appLogger.info(`▲▲${productId}-AWS-DynamoDB-deleteOrder-CALL-${JSON.stringify({ classType, sortKey, })}`);
   try {
     await db.delete({
@@ -143,7 +137,7 @@ export const deleteOrder = async (productId: ProductId, state: OrderState, accep
     }).promise();
     return true;
   } catch (err) {
-    await handleError(__filename, 'deleteOrder', 'code', 'DBの削除に失敗。', { productId, state, acceptanceId, orderDate, }, err);
+    await handleError(__filename, 'deleteOrder', 'code', 'DBの削除に失敗。', { productId, state, id, orderDate, }, err);
     return false;
   }
 };

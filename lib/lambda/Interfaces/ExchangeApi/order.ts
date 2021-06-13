@@ -1,131 +1,160 @@
-import { getOrders, OrderBitflyer } from "./Bitflyer/getOrders";
-import { Order, OrderState } from '../DomainType';
+import { getOrders as getBitflyerOrders, OrderBitflyer, OrderStateBitflyer } from "./Bitflyer/getOrders";
+import { SimpleOrder, OrderState } from '../DomainType';
 import handleError from "../../HandleError/handleError";
-import { getProductSetting, ProductCode, ProductSetting } from "../../Main/productSettings";
-import { sendOrder as sendOrderBitflyer } from "./Bitflyer/sendOrder";
-import { cancelOrder as cancelOrderBitflyer } from './Bitflyer/cancelOrder';
+import { ExchangeCode, ProductSetting } from "../../Main/productSettings";
+import { sendOrder as sendBitflyerOrder } from "./Bitflyer/sendOrder";
+import { cancelOrder as cancelBitflyerOrder } from './Bitflyer/cancelOrder';
+import { cancelOrder as cancelGmoOrder } from './GMO/cancelOrder';
 import { appLogger } from "../../Common/log";
+import { getOrders as getGmoOrders, OrderStatusGMO } from './GMO/getOrders';
+import { sendOrder as sendGmoOrder } from './GMO/sendOrder';
 
-export type GetChildOrderResult = {
-  id: number,
-  orderId: string,
-  acceptanceId: string,
-  averagePrice?: number,
-  state: OrderState,
-  outstandingSize: number,
-  cancelSize: number,
-  executedSize: number,
-};
-
-/**
- * 全ての注文の一覧を取得する。
- * @param productSetting プロダクト設定。
- * @returns 注文の一覧。
- */
-export const getAllOrders = async (productSetting: ProductSetting): Promise<GetChildOrderResult[]> => {
-
+export const getOrders = async (productSetting: ProductSetting, orders: SimpleOrder[]) => {
   appLogger.info(`★★${productSetting.id}-API-getAllOrders-CALL`);
-  const orders = await getOrders(productSetting.productCode);
-  const result = orders.map((order) => convertOrder(order));
-  appLogger.info(`★★${productSetting.id}-API-getAllOrders-RESULT-${JSON.stringify({ result })}`);
-  return result;
-
+  let newOrders: SimpleOrder[] = [];
+  if (productSetting.exchangeCode === 'Bitflyer') {
+    newOrders = await getOrdersBitflyer(productSetting, orders);
+  } else if (productSetting.exchangeCode === 'GMO') {
+    newOrders = await getOrdersGmo(orders);
+  }
+  appLogger.info(`★★${productSetting.id}-API-getAllOrders-RESULT-${JSON.stringify({ newOrders })}`);
+  return newOrders;
 };
 
-/**
- * BitflyerのOrderをGetChildOrderResultに変換する。
- */
-const convertOrder = (order: OrderBitflyer): GetChildOrderResult => {
-  return {
-    id: order.id,
-    orderId: order.child_order_id,
-    acceptanceId: order.child_order_acceptance_id,
-    averagePrice: order.average_price,
-    state: order.child_order_state,
-    outstandingSize: order.outstanding_size,
-    cancelSize: order.cancel_size,
-    executedSize: order.executed_size,
-  };
-}
-
-export type OrderStateExchangeApi = 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'REJECTED' | 'COMPLETED'
-
-/**
- * 特定の状態の注文の一覧を取得する。
- * @param productSetting プロダクト設定。
- * @param state 検索対象の状態。
- * @returns 注文の一覧。
- */
-export const getStateOrders = async (productSetting: ProductSetting, state: OrderStateExchangeApi): Promise<GetChildOrderResult[]> => {
-  appLogger.info(`★★${productSetting.id}-API-getStateOrders-CALL-${JSON.stringify({ state, })}`);
-  const orders = await getOrders(productSetting.productCode, { child_order_state: state });
-  const result = orders.map((order) => convertOrder(order));
-  appLogger.info(`★★${productSetting.id}-API-getStateOrders-RESULT-${JSON.stringify({ result, })}`);
-  return result;
+const getOrdersBitflyer = async (productSetting: ProductSetting, orders: SimpleOrder[]) => {
+  const newOrders: SimpleOrder[] = [];
+  for (let order of orders) {
+    const newOrder = await getBitflyerOrders(productSetting.productCode, { child_order_acceptance_id: order.idBitflyer?.acceptanceId });
+    if (newOrder.length >= 1) {
+      newOrders.push({
+        ...order,
+        state: convertBitflyerOrderState(newOrder[0].child_order_state),
+        main: {
+          ...order.main,
+          averagePrice: newOrder[0].average_price,
+        }
+      });
+    } else {
+      newOrders.push({ ...order });
+    }
+  }
+  return newOrders;
+};
+const convertBitflyerOrderState = (state: OrderStateBitflyer): OrderState => {
+  if (state === 'ACTIVE') return 'ACTIVE';
+  if (state === 'COMPLETED') return 'COMPLETED';
+  if (state === 'CANCELED') return 'INVALID';
+  if (state === 'EXPIRED') return 'INVALID';
+  if (state === 'REJECTED') return 'INVALID';
+  return 'UNKNOWN';
 };
 
-/**
- * 特定の注文を取得する。
- * @param productSetting プロダクト設定。
- * @param orderId 検索対象の注文ID。
- * @param acceptanceId 検索対象の受付ID。
- * @returns 特定の注文。配列形式で返却する。
- */
-export const getOrder = async (productSetting: ProductSetting, orderId?: string, acceptanceId?: string) => {
-  appLogger.info(`★★${productSetting.id}-API-getOrder-CALL-${JSON.stringify({ orderId, acceptanceId, })}`);
-  const orders = await getOrders(productSetting.productCode, { child_order_id: orderId, child_order_acceptance_id: acceptanceId });
-  const result = orders.map((order) => convertOrder(order));
-  appLogger.info(`★★${productSetting.id}-API-getOrder-RESULT-${JSON.stringify({ result, })}`);
-  return result;
+const getOrdersGmo = async (orders: SimpleOrder[]) => {
+  const newOrders: SimpleOrder[] = [];
+  for (let index = 0; index < orders.length; index += 10) { // 10件ごとに分割する
+    const targetOrders = [...orders].splice(index, index + 10);
+    const newGmoOrders = await getGmoOrders(targetOrders.map((order) => (order.idGmo?.toString() || '')));
+    for (let order of targetOrders) {
+      const newOrder = newGmoOrders.find((o) => (o.orderId === order.idGmo));
+      if (newOrder) {
+        newOrders.push({
+          ...order,
+          state: convertGmoOrderState(newOrder.status),
+        });
+      } else {
+        newOrders.push({ ...order });
+      }
+    }
+  }
+  return newOrders;
+};
+const convertGmoOrderState = (state: OrderStatusGMO): OrderState => {
+  if (state === 'WAITING') return 'ACTIVE';
+  if (state === 'ORDERED') return 'ACTIVE';
+  if (state === 'MODIFYING') return 'ACTIVE';
+  if (state === 'CANCELLING') return 'INVALID';
+  if (state === 'CANCELED') return 'INVALID';
+  if (state === 'EXECUTED') return 'COMPLETED';
+  if (state === 'EXPIRED') return 'INVALID';
+  return 'UNKNOWN';
 };
 
-/**
- * 特定の親注文に関連する子注文の一覧を取得する。
- * @param productSetting プロダクト設定。
- * @param parentOrderId 親注文の注文ID。
- * @returns 関連する子注文の一覧。
- */
-export const getRelatedChildOrders = async (productSetting: ProductSetting, parentOrderId: string,): Promise<GetChildOrderResult[]> => {
-  appLogger.info(`★★${productSetting.id}-API-getRelatedChildOrders-CALL-${JSON.stringify({ parentOrderId, })}`);
-  const orders = await getOrders(productSetting.productCode, { parent_order_id: parentOrderId });
-  const result = orders.map((order) => convertOrder(order));
-  appLogger.info(`★★${productSetting.id}-API-getRelatedChildOrders-RESULT-${JSON.stringify({ result, })}`);
-  return result;
-};
-
-/**
- * 注文を行う。
- * @param productSetting プロダクト設定
- * @param orderType 指値注文の場合はLIMIT、成行注文の場合はMARKET。
- * @param side 売り注文・買い注文を指定。
- * @param sizeUnit 注文数量。正の整数で指定。発注時、productSettingsで指定したorderUnitをかけて発注する。
- * @param price 指値の価格。
- * @returns 注文受付ID。エラー時はundefined。
- */
 export const sendOrder = async (productSetting: ProductSetting, orderType: 'LIMIT' | 'MARKET', side: 'BUY' | 'SELL', sizeUnit: number, price?: number) => {
 
-  appLogger.info(`★★${productSetting.id}-API-sendOrder-CALL-${JSON.stringify({ orderType, side, sizeUnit, price, })}`);
+  appLogger.info(`★★${productSetting.id}-API-sendOrder-CALL-${JSON.stringify({ productSetting, orderType, side, sizeUnit, price, })}`);
+  let order: SimpleOrder | undefined = undefined;
+  if (productSetting.exchangeCode === 'Bitflyer') {
+    order = await sendOrderBitflyer(productSetting, orderType, side, sizeUnit, price,);
+  } else if (productSetting.exchangeCode === 'GMO') {
+    order = await sendOrderGmo(productSetting, orderType, side, sizeUnit, price,);
+  }
+  appLogger.info(`★★${productSetting.id}-API-sendOrder-RESULT-${JSON.stringify({ order, })}`);
+  return order;
+};
+
+export const sendOrderBitflyer = async (productSetting: ProductSetting, orderType: 'LIMIT' | 'MARKET', side: 'BUY' | 'SELL', sizeUnit: number, price?: number) => {
   const size = getOrderSize(productSetting, sizeUnit);
   if (!size) return undefined;
 
-  const result = await sendOrderBitflyer(productSetting.productCode, { child_order_type: orderType, side, size, price });
+  const result = await sendBitflyerOrder(productSetting.productCode, { child_order_type: orderType, side, size, price });
 
   if (!result) return undefined;
-  const order: Order = {
-    acceptanceId: result.child_order_acceptance_id,
+  const orderId = 'Bitflyer-' + result.child_order_acceptance_id;
+  const order: SimpleOrder = {
+    id: orderId,
+    idBitflyer: {
+      acceptanceId: result.child_order_acceptance_id,
+    },
     orderDate: new Date(),
     state: 'UNKNOWN',
-    parentSortMethod: 'NORMAL',
-    childOrderList: [{
-      orderType,
-      side,
-      size,
-      state: 'UNKNOWN',
-      price,
-    }],
+    main: {
+      orderType: orderType,
+      side: side,
+      size: size,
+      price: price,
+    },
   };
-  appLogger.info(`★★${productSetting.id}-API-sendOrder-RESULT-${JSON.stringify({ result: order, })}`);
   return order;
+};
+
+export const sendOrderGmo = async (productSetting: ProductSetting, orderType: 'LIMIT' | 'MARKET', side: 'BUY' | 'SELL', sizeUnit: number, price?: number) => {
+  const size = getOrderSize(productSetting, sizeUnit);
+  if (!size) return undefined;
+
+  const result = await sendGmoOrder({
+    symbol: productSetting.productCode,
+    executionType: orderType,
+    side, size, price,
+  });
+
+  if (!result) return undefined;
+  const orderId = 'GMO-' + result.data;
+  const order: SimpleOrder = {
+    id: orderId,
+    idGmo: result.data,
+    orderDate: new Date(),
+    state: 'UNKNOWN',
+    main: {
+      orderType: orderType,
+      side: side,
+      size: size,
+      price: price,
+    },
+  };
+  return order;
+};
+
+export const cancelOrder2 = async (productSetting: ProductSetting, order: SimpleOrder) => {
+
+  appLogger.info(`★★${productSetting.id}-API-cancelOrder-CALL-${JSON.stringify({ productSetting, order, })}`);
+  let result: boolean = false;
+  if (productSetting.exchangeCode === 'Bitflyer') {
+    result = await cancelBitflyerOrder(productSetting.productCode, { child_order_acceptance_id: order.idBitflyer?.acceptanceId });
+  } else if (productSetting.exchangeCode === 'GMO') {
+    result = await cancelGmoOrder(order.idGmo!); // GMOの注文であれば、idGmoは必須…のはず。
+  }
+  appLogger.info(`★★${productSetting.id}-API-cancelOrder-RESULT-${JSON.stringify({ result, })}`);
+  return result;
 
 };
 
@@ -144,7 +173,7 @@ export const cancelOrder = async (productSetting: ProductSetting, orderId?: stri
     return false;
   }
 
-  const result = await cancelOrderBitflyer(productSetting.productCode, { child_order_id: orderId, child_order_acceptance_id: orderAcceptanceId });
+  const result = await cancelBitflyerOrder(productSetting.productCode, { child_order_id: orderId, child_order_acceptance_id: orderAcceptanceId });
   appLogger.info(`★★${productSetting.id}-API-cancelOrder-RESULT-${JSON.stringify({ result, })}`);
   return result;
 
