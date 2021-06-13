@@ -144,7 +144,7 @@ export const sendOrderGmo = async (productSetting: ProductSetting, orderType: 'L
   return order;
 };
 
-export const cancelOrder2 = async (productSetting: ProductSetting, order: SimpleOrder) => {
+export const cancelOrder = async (productSetting: ProductSetting, order: SimpleOrder) => {
 
   appLogger.info(`★★${productSetting.id}-API-cancelOrder-CALL-${JSON.stringify({ productSetting, order, })}`);
   let result: boolean = false;
@@ -153,27 +153,6 @@ export const cancelOrder2 = async (productSetting: ProductSetting, order: Simple
   } else if (productSetting.exchangeCode === 'GMO') {
     result = await cancelGmoOrder(order.idGmo!); // GMOの注文であれば、idGmoは必須…のはず。
   }
-  appLogger.info(`★★${productSetting.id}-API-cancelOrder-RESULT-${JSON.stringify({ result, })}`);
-  return result;
-
-};
-
-/**
- * 注文をキャンセルする。
- * @param productSetting プロダクト設定。
- * @param orderId 注文ID。
- * @param orderAcceptanceId 注文受付ID。
- * @returns 成功時はtrue、失敗時はfalse。
- */
-export const cancelOrder = async (productSetting: ProductSetting, orderId?: string, orderAcceptanceId?: string) => {
-
-  appLogger.info(`★★${productSetting.id}-API-cancelOrder-CALL-${JSON.stringify({ orderId, orderAcceptanceId, })}`);
-  if (!orderId && !orderAcceptanceId) {
-    await handleError(__filename, 'cancelOrder', 'code', '注文IDか注文受付IDのいずれかは必須です', { productSetting, orderId, orderAcceptanceId, });
-    return false;
-  }
-
-  const result = await cancelBitflyerOrder(productSetting.productCode, { child_order_id: orderId, child_order_acceptance_id: orderAcceptanceId });
   appLogger.info(`★★${productSetting.id}-API-cancelOrder-RESULT-${JSON.stringify({ result, })}`);
   return result;
 
