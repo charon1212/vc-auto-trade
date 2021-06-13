@@ -119,7 +119,7 @@ type ChildOrderBitflyer = {
 };
 const convertBitflyerChildOrder = async (productSetting: ProductSetting, childOrder: ChildOrder,): Promise<ChildOrderBitflyer | undefined> => {
 
-  const size = await getOrderSize(productSetting, childOrder.sizeByUnit);
+  const size = getOrderSize(productSetting, childOrder.sizeByUnit);
   if (!size) return undefined;
 
   return {

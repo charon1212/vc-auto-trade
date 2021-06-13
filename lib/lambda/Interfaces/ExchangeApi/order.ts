@@ -105,7 +105,7 @@ export const getRelatedChildOrders = async (productSetting: ProductSetting, pare
 export const sendOrder = async (productSetting: ProductSetting, orderType: 'LIMIT' | 'MARKET', side: 'BUY' | 'SELL', sizeUnit: number, price?: number) => {
 
   appLogger.info(`★★${productSetting.id}-API-sendOrder-CALL-${JSON.stringify({ orderType, side, sizeUnit, price, })}`);
-  const size = await getOrderSize(productSetting, sizeUnit);
+  const size = getOrderSize(productSetting, sizeUnit);
   if (!size) return undefined;
 
   const result = await sendOrderBitflyer(productSetting.productCode, { child_order_type: orderType, side, size, price });
@@ -157,12 +157,7 @@ export const cancelOrder = async (productSetting: ProductSetting, orderId?: stri
  * @param sizeByUnit 最小単位を単位とした注文数量。正の整数で指定する。
  * @returns 最小単位の整数倍で表した注文数量。
  */
-export const getOrderSize = async (productSetting: ProductSetting, sizeByUnit: number) => {
-
-  if (!productSetting) {
-    await handleError(__filename, 'getOrderSize', 'code', 'プロダクトコードが見つかりません。', { productSetting, sizeByUnit, });
-    return undefined;
-  }
+export const getOrderSize = (productSetting: ProductSetting, sizeByUnit: number) => {
 
   // 丸目誤差の影響で端数が残ることがあり、端数が残るとBitflyerAPIにはじかれる。それを直すため、10桁目で四捨五入する。
   const base = 1e9;
