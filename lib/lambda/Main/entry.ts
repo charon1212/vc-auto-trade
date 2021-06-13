@@ -4,7 +4,7 @@ import handleError from "../HandleError/handleError";
 import { setExecution } from "../Interfaces/AWS/Dynamodb/execution";
 import { setLongExecution } from "../Interfaces/AWS/Dynamodb/longExecution";
 import { deleteOrder, setOrder } from "../Interfaces/AWS/Dynamodb/order";
-import { Balance, Execution, ExecutionAggregated, Order, OrderState } from "../Interfaces/DomainType";
+import { Balance, Execution, ExecutionAggregated, SimpleOrder, OrderState } from "../Interfaces/DomainType";
 import { getProductContext, importProductContextFromDb, saveProductContext } from "./context";
 import { execute } from "./ExecutePhase/execute";
 import { getBalances } from "./InputPhase/getBalances";
@@ -43,7 +43,7 @@ const productEntry = async (productSetting: ProductSetting) => {
   let executions: Execution[] = []; // 「基準時刻の1分前」以降の約定履歴の一覧
   let shortAggregatedExecutions: ExecutionAggregated[] = []; // 10秒間隔で集計した集計約定のリスト
   let longAggregatedExecutions: ExecutionAggregated[] = []; // 1時間間隔で集計した集計約定のリスト
-  let orders: { order: Order, beforeState: OrderState }[] = []; // DynamoDB上でACTIVEまたはUNKNOWNとなっている注文のリスト
+  let orders: { order: SimpleOrder, beforeState: OrderState }[] = []; // DynamoDB上でACTIVEまたはUNKNOWNとなっている注文のリスト
   let balanceReal: Balance | undefined = undefined; // 日本円の資産残高
   let balanceVirtual: Balance | undefined = undefined; // 仮想通貨の資産残高
 
@@ -53,7 +53,7 @@ const productEntry = async (productSetting: ProductSetting) => {
     async () => { longAggregatedExecutions = await getLongAggregatedExecutions(productSetting.id, std.getStd()) },
     async () => { orders = await getOrders(productSetting) },
     async () => {
-      const obj = await getBalances(productSetting.currencyCode.real, productSetting.currencyCode.virtual);
+      const obj = await getBalances(productSetting.exchangeCode, productSetting.currencyCode.real, productSetting.currencyCode.virtual);
       balanceReal = obj.balanceReal;
       balanceVirtual = obj.balanceVirtual;
     });
@@ -84,11 +84,11 @@ const productEntry = async (productSetting: ProductSetting) => {
 
 };
 
-const saveOrder = async (productId: ProductId, order: Order, beforeState?: OrderState) => {
+const saveOrder = async (productId: ProductId, order: SimpleOrder, beforeState?: OrderState) => {
 
   if (beforeState && order.state !== beforeState) {
     // 前のステートのオーダーを削除する。
-    await deleteOrder(productId, beforeState, order.acceptanceId, order.orderDate);
+    await deleteOrder(productId, beforeState, order.id, order.orderDate);
   }
   await setOrder(productId, order);
 

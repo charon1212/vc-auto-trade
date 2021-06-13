@@ -1,4 +1,4 @@
-import { Execution, Order } from "../../Interfaces/DomainType";
+import { Execution, SimpleOrder } from "../../Interfaces/DomainType";
 import { getProductContext } from "../context";
 import { ProductId } from "../productSettings";
 import { StandardTime } from "../StandardTime";
@@ -15,7 +15,7 @@ export const execute: ExecutePhaseFunction = async (input) => {
   const { newShortAggregatedExecutions, newLongAggregatedExecution } =
     await aggregateExecution(executions, shortAggregatedExecutions, longAggregatedExecutions, std);
 
-  let newOrders: Order[] = [];
+  let newOrders: SimpleOrder[] = [];
   if (productSetting.executeOrderPhase) {
     newOrders = await main({
       shortAggregatedExecutions: [...shortAggregatedExecutions, ...newShortAggregatedExecutions],

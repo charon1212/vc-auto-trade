@@ -1,4 +1,4 @@
-import { Balance, Execution, ExecutionAggregated, Order, OrderState } from "../../Interfaces/DomainType";
+import { Balance, Execution, ExecutionAggregated, SimpleOrder, OrderState } from "../../Interfaces/DomainType";
 import { ProductSetting } from "../productSettings";
 import { StandardTime } from "../StandardTime";
 
@@ -6,7 +6,7 @@ export type Input = {
   executions: Execution[],
   shortAggregatedExecutions: ExecutionAggregated[],
   longAggregatedExecutions: ExecutionAggregated[],
-  orders: { order: Order, beforeState: OrderState }[],
+  orders: { order: SimpleOrder, beforeState: OrderState }[],
   balanceReal: Balance,
   balanceVirtual: Balance,
 
@@ -14,7 +14,7 @@ export type Input = {
   std: StandardTime,
 };
 export type Output = {
-  updatedOrder: { order: Order, beforeState?: OrderState }[],
+  updatedOrder: { order: SimpleOrder, beforeState?: OrderState }[],
   newAggregatedExecutions: ExecutionAggregated[],
   newLongAggregatedExecution?: ExecutionAggregated,
 };

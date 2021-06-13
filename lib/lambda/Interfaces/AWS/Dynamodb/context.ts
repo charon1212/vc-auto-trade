@@ -11,7 +11,7 @@ export type VCATProductContext = {
   },
   orderPhase?: OrderPhase,
   afterSendOrder?: boolean,
-  orderAcceptanceId?: string,
+  orderId?: string,
   buyOrderPrice?: number,
   makeNewOrder?: boolean,
   startBuyTimestamp?: number,
