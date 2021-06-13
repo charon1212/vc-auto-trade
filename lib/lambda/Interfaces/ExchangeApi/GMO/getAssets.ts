@@ -25,7 +25,7 @@ export const getAssets = async () => {
       available: +asset.available,
       conversionRate: +asset.conversionRate,
     }));
-    if (hasNanAttributeList(convertedAssets)) throw new Error('amount,available,conversionRateの変換に失敗しました。');
+    if (hasNanAttributeList(convertedAssets)) throw new Error('数値変換に失敗');
     return convertedAssets as AssetGMO[];
   } catch (err) {
     await handleError(__filename, 'getAssets', 'code', 'API通信でエラー', {}, err);

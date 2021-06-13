@@ -31,7 +31,7 @@ export const getTrades = async (symbol: ProductCode, page?: number, count?: numb
       size: +trade.size,
       timestamp: convertStringToDate(trade.timestamp),
     })) as TradeGMO[];
-    if (hasNanAttributeList(convertedTrades)) throw new Error('price,sizeの変換に失敗しました。');
+    if (hasNanAttributeList(convertedTrades)) throw new Error('数値変換に失敗');
     return convertedTrades;
 
   } catch (err) {
