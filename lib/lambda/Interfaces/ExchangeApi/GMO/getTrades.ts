@@ -5,7 +5,7 @@ import { sendRequest } from "./apiRequest";
 import { hasNanAttributeList, } from "./util";
 
 export type TradeGMO = {
-  side: 'BUY' | 'SELL' | '', // 買い注文と売り注文のどちらで成立したか表す。板寄せで決まると空文字になりうる。
+  side: 'BUY' | 'SELL', // 買い注文と売り注文のどちらで成立したか表す。板寄せで決まると空文字になりうる？
   price: number, // 約定価格
   size: number, // 約定量
   timestamp: Date, // 約定日時

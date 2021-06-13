@@ -2,18 +2,57 @@ import { appLogger } from "../../Common/log";
 import { ProductSetting } from "../../Main/productSettings";
 import { Execution } from "../DomainType";
 import { ExecutionBitflyer, getExecutions as getBitflyerExecutions } from "./Bitflyer/getExecutions";
+import { getTrades, TradeGMO } from "./GMO/getTrades";
 
 /**
  * 指定した時刻以降の約定履歴を取得する。
  * 取引所のAPIから約定履歴を取得して、業務ロジックで使いやすい形に変換する。
  * @param timestamp 約定履歴を取得する期間の、開始時刻を表すUnix timestamp。
  * @param productSetting プロダクト設定。
- * @param lastExecutionId timestamp以前の約定ID。なければ指定しなくてもよいが、あると検索効率が上がる。
+ * @param lastExecutionId timestamp以前の約定ID。Bitflyerの場合のみ有効。なければ指定しなくてもよいが、あると検索効率が上がる。
  * @returns 指定した時刻以降の約定履歴。
  */
 export const getExecutions = async (timestamp: number, productSetting: ProductSetting, lastExecutionId?: number) => {
 
   appLogger.info(`★★${productSetting.id}-API-getExecutions-CALL-${JSON.stringify({ timestamp, productSetting, lastExecutionId })}`);
+  let result: Execution[] = [];
+  if (productSetting.exchangeCode === 'Bitflyer') {
+    result = await getExecutionsBitflyer(timestamp, productSetting, lastExecutionId);
+  } else if (productSetting.exchangeCode === 'GMO') {
+    result = await getExecutionsGmo(timestamp, productSetting);
+  }
+  appLogger.info(`★★${productSetting.id}-API-getExecutions-RESULT-${JSON.stringify({ result })}`);
+  return result;
+
+};
+
+const getExecutionsGmo = async (timestamp: number, productSetting: ProductSetting) => {
+
+  const executionList: TradeGMO[] = [];
+  for (let page = 1; page < 5; page++) {
+    const res = await getTrades(productSetting.productCode, page);
+    if (res.length === 0) break;
+    if (res[res.length - 1].timestamp.getTime() < timestamp) {
+      executionList.push(...(res.filter((trade) => (trade.timestamp.getTime() >= timestamp)))); // 開始時刻timestamp以降のデータのみ追加
+      break;
+    } else {
+      executionList.push(...res);
+    }
+  }
+
+  const result = executionList.map((exec): Execution => ({
+    id: 0,
+    price: exec.price,
+    side: exec.side,
+    size: exec.size,
+    executionDate: exec.timestamp,
+  }));
+  return result;
+
+};
+
+const getExecutionsBitflyer = async (timestamp: number, productSetting: ProductSetting, lastExecutionId?: number) => {
+
   const executionList: ExecutionBitflyer[] = [];
   let before: number | undefined = undefined;
 
@@ -44,7 +83,6 @@ export const getExecutions = async (timestamp: number, productSetting: ProductSe
       side: exec.side,
       size: exec.size
     })); // データ型をBitflyerから変換する。
-  appLogger.info(`★★${productSetting.id}-API-getExecutions-RESULT-${JSON.stringify({ result })}`);
 
   return result;
 
