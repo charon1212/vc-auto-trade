@@ -7,6 +7,7 @@ import * as dotenv from 'dotenv';
 import { AttributeType, Table } from '@aws-cdk/aws-dynamodb';
 import { Duration } from '@aws-cdk/core';
 import { LayerVersion } from '@aws-cdk/aws-lambda';
+import { ProcessEnv } from './lambda/Common/processEnv';
 
 /**
  * 構築するインフラを定義する
@@ -17,7 +18,7 @@ import { LayerVersion } from '@aws-cdk/aws-lambda';
 export const stackConstructor = (scope: cdk.Construct, env: string) => {
 
   dotenv.config(); // load .env file.
-  const { accessKey, secretAccessKey, slackBotToken, slackChannelProdError, slackChannelProdInfo, slackChannelDevError, slackChannelDevInfo, awsLayerArnList, } = getEnvSettings();
+  const { accessKeyBitflyer, secretAccessKeyBitflyer, accessKeyGmo, secretAccessKeyGmo, slackBotToken, slackChannelProdError, slackChannelProdInfo, slackChannelDevError, slackChannelDevInfo, awsLayerArnList, } = getEnvSettings();
 
   const isProduction = (env === '');
   const envName = isProduction ? 'production' : 'dev';
@@ -46,12 +47,14 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
   });
 
   /** Lambdaの環境変数 */
-  const lambdaEnvVariables = {
+  const lambdaEnvVariables: ProcessEnv = {
     TableName: dynamoTable.tableName,
     BucketName: s3Bucket.bucketName,
     EnvName: envName,
-    AKEY: accessKey,
-    SKEY: secretAccessKey,
+    akeyBitflyer: accessKeyBitflyer,
+    skeyBitflyer: secretAccessKeyBitflyer,
+    akeyGmo: accessKeyGmo,
+    skeyGmo: secretAccessKeyGmo,
     LogLevel: isProduction ? 'ERROR' : 'ERROR',
     slackBotToken,
     slackChannelInfo,
@@ -110,8 +113,10 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
 };
 
 const getEnvSettings = () => {
-  const accessKey = process.env.AKEY || '';
-  const secretAccessKey = process.env.SKEY || '';
+  const accessKeyBitflyer = process.env.AKEY_BITFLYER || '';
+  const secretAccessKeyBitflyer = process.env.SKEY_BITFLYER || '';
+  const accessKeyGmo = process.env.AKEY_GMO || '';
+  const secretAccessKeyGmo = process.env.SKEY_GMO || '';
   const slackBotToken = process.env.SLACK_API_PROD_BOT_AUTH_TOKEN || '';
   const slackChannelProdError = process.env.SLACK_API_PROD_ERRORREPORT_CHANNEL || '';
   const slackChannelProdInfo = process.env.SLACK_API_PROD_INFOREPORT_CHANNEL || '';
@@ -119,7 +124,7 @@ const getEnvSettings = () => {
   const slackChannelDevInfo = process.env.SLACK_API_DEV_INFOREPORT_CHANNEL || '';
   const awsLayerArnList = process.env.AWS_LAYER_ARN_LIST || '';
 
-  const obj = { accessKey, secretAccessKey, slackBotToken, slackChannelProdError, slackChannelProdInfo, slackChannelDevError, slackChannelDevInfo, awsLayerArnList, };
+  const obj = { accessKeyBitflyer, secretAccessKeyBitflyer, accessKeyGmo, secretAccessKeyGmo, slackBotToken, slackChannelProdError, slackChannelProdInfo, slackChannelDevError, slackChannelDevInfo, awsLayerArnList, };
 
   Object.values(obj).forEach((v) => {
     if (!v) throw new Error('設定値が足りません。'); // falsyな値がないかチェック。

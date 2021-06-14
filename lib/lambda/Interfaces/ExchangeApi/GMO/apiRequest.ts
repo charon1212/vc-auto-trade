@@ -76,8 +76,8 @@ export const sendRequest = async (params: { uri: string, method: RequestMethod, 
  */
 export const getPrivateApiRequestHeader = (timestamp: number, method: string, path: string, body?: Object) => {
 
-  const apiKey = processEnv.AKEY;
-  const secretAccessKey = processEnv.SKEY;
+  const apiKey = processEnv.akeyGmo;
+  const secretAccessKey = processEnv.skeyGmo;
 
   const text = timestamp.toString() + method + path + (body ? JSON.stringify(body) : '');
   const sign = crypto.createHmac('sha256', secretAccessKey).update(text).digest('hex');

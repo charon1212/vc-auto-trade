@@ -1,11 +1,14 @@
 import { VCATLogLevel } from "./log";
 
 type EnvName = 'production' | 'dev';
-type ProcessEnv = {
+export type ProcessEnv = {
   TableName: string,
   EnvName: 'production' | 'dev',
-  AKEY: string,
-  SKEY: string,
+  BucketName: string,
+  akeyBitflyer: string,
+  skeyBitflyer: string,
+  akeyGmo: string,
+  skeyGmo: string,
   LogLevel: VCATLogLevel,
   slackBotToken: string,
   slackChannelInfo: string,
@@ -15,12 +18,15 @@ type ProcessEnv = {
 export const processEnv: ProcessEnv = {
   TableName: process.env.TableName || '', // 利用するDynamoDBのテーブル名
   EnvName: (process.env.EnvName || 'dev') as EnvName, // デプロイした環境の種類を表す名前。開発環境は'dev'、本番環境は'production'。
-  AKEY: process.env.AKEY || '', // Bitflyer APIのアクセスキー
-  SKEY: process.env.SKEY || '', // Bitflyer APIのシークレットアクセスキー
+  akeyBitflyer: process.env.akeyBitflyer || '', // Bitflyer APIのアクセスキー
+  skeyBitflyer: process.env.skeyBitflyer || '', // Bitflyer APIのシークレットアクセスキー
+  akeyGmo: process.env.akeyGmo || '', // Gmo APIのアクセスキー
+  skeyGmo: process.env.skeyGmo || '', // Gmo APIのシークレットアクセスキー
   LogLevel: (process.env.LogLevel || 'TRACE') as VCATLogLevel, // ログレベル
   slackBotToken: process.env.slackBotToken || '', // Slackボットの認証トークン
   slackChannelInfo: process.env.slackChannelInfo || '', // Slackのチャンネル(Info用)
   slackChannelError: process.env.slackChannelError || '', // Slackのチャンネル(Error用)
+  BucketName: process.env.BucketName || '', // S3バケット名
 };
 
 /**
