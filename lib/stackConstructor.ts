@@ -102,7 +102,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       id: 'DevelopmentTestHandler' + env,
       codeDirPath: 'lib/lambda',
       handler: 'developmentTest.handler',
-      environment: lambdaEnvVariables,
+      environment: {...lambdaEnvVariables, LogLevel: 'TRACE', },
       timeoutSecond: 60,
       memorySize: 1024,
       layersArn: layerArnList,
