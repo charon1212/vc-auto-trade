@@ -16,7 +16,9 @@ const handleError = async (filePath: string, methodName: string, code?: string, 
   output += `■ファイルパス：${filePath}\r\n`;
   if (msg) output += `■メッセージ：${msg}\r\n`;
   if (args) output += `■引数：${JSON.stringify(args)}\r\n`;
-  if (err) output += `■エラー内容：${JSON.stringify(err)}`;
+  if (err) {
+    output += `■エラー内容：${JSON.stringify({ message: err.message, trace: err.trace, err, })}`;
+  };
   appLogger.error(output);
   await sendSlackMessage(output, true);
 
