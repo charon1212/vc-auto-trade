@@ -18,7 +18,7 @@ export const getAssets = async () => {
   try {
     const res = await sendRequest({ uri: '/v1/account/assets', method: 'GET' }, true, true);
     if (!res) return []; // API通信でエラー、または200系でない。
-    const assets = await res.json();
+    const assets = (await res.json()).data;
     const convertedAssets = assets.map((asset: any) => ({
       ...asset,
       amount: +asset.amount,
