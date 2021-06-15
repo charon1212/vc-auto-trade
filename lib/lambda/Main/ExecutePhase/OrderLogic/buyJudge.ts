@@ -10,7 +10,8 @@ import { getAverage, makeMoveAverage, makePriceHistory } from "./judgeUtil";
  */
 export const judgeBuyTiming = (productSetting: ProductSetting, shortAggregatedExecutions: ExecutionAggregated[],) => {
 
-  if (shortAggregatedExecutions.length === 0) return false;
+  // 2時間 = 2*60*6 × (10秒) = 720 × (10秒)なので、720点のデータが期待できる。この9割はそろっていること。
+  if (shortAggregatedExecutions.length < 720 * 0.9) return false;
   const priceHistory = makePriceHistory(shortAggregatedExecutions, 10 * 1000);
   const priceNow = priceHistory[0];
   // 10点の移動平均線
