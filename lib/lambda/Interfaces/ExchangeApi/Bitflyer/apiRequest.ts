@@ -29,7 +29,7 @@ export const sendRequest = async (params: { uri: string, method: RequestMethod, 
   try {
 
     // クエリパラメータをURLに登録
-    url = urlBaseBitflyer + convertQueryParamsToStr(queryParams);
+    url = urlBaseBitflyer + uri + convertQueryParamsToStr(queryParams);
 
     // ヘッダー取得処理
     const timestamp = Date.now();

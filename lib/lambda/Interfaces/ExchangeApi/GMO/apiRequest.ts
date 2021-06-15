@@ -23,17 +23,18 @@ export const sendRequest = async (params: { uri: string, method: RequestMethod, 
 
   const { uri, method, body, queryParams } = params;
   let headers;
-  let path = uri;
   let url = isPrivateHTTP ? urlBaseGmoPrivate : urlBaseGmoPublic;
 
   try {
 
+    // uriを追加
+    url += uri;
     // クエリパラメータをURLに登録
     url += convertQueryParamsToStr(queryParams);
 
     // ヘッダー取得処理
     const timestamp = Date.now();
-    const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method, path, params.body) : {};
+    const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method, uri, params.body) : {};
     headers = { ...additionalHeaders, ...params.headers };
 
     appLogger.info(`★★API-GMO-REQUEST-${JSON.stringify({ params, url, method, headers, body, })}`);
