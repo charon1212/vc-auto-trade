@@ -18,15 +18,15 @@ export type ProductCode = 'XRP_JPY' | 'BTC_JPY' | 'ETH_JPY' | 'BTC';
 export type ExchangeCode = 'Bitflyer' | 'GMO';
 
 const productSettingsProd: ProductSetting[] = [
-  {
-    id: 'XRP_JPY',
-    exchangeCode: 'Bitflyer',
-    productCode: 'XRP_JPY',
-    currencyCode: { real: 'JPY', virtual: 'XRP' },
-    orderUnit: 0.1,
-    maxOrderSize: 10000,
-    executeOrderPhase: false,
-  },
+  // {
+  //   id: 'XRP_JPY',
+  //   exchangeCode: 'Bitflyer',
+  //   productCode: 'XRP_JPY',
+  //   currencyCode: { real: 'JPY', virtual: 'XRP' },
+  //   orderUnit: 0.1,
+  //   maxOrderSize: 10000,
+  //   executeOrderPhase: false,
+  // },
   {
     id: 'GMO-BTC',
     exchangeCode: 'GMO',
