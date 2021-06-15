@@ -44,7 +44,7 @@ export const getExecutions = async (productCode: ProductCode, count: number, bef
     }, false, true);
     if (!res) return []; // API通信でエラー、または200系でない。
 
-    const json = await res.json();
+    const json = res.json;
     for (let exec of json) {
       // 日付を文字列からDateへ変換する。
       exec.exec_date = convertStringToDate(exec.exec_date);

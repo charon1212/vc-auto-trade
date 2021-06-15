@@ -42,8 +42,7 @@ export const sendParentOrder = async (params: SendParentOrderParams) => {
       method: 'POST',
     }, true, true);
     if (!res) return undefined;
-    const json = await res.json();
-    return json as SendParentOrderResult;
+    return res.json as SendParentOrderResult;
   } catch (err) {
     await handleError(__filename, 'sendParentOrder', 'code', 'API通信でエラー', { params, }, err);
     return undefined;

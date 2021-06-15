@@ -36,7 +36,7 @@ export const sendOrder = async (productCode: ProductCode, params: SendOrderParam
       method: 'POST',
     }, true, true);
     if (!res) return undefined; // API通信でエラー、または200系でない。
-    const json = await res.json();
+    const json = res.json;
     return json as SendOrderResult;
   } catch (err) {
     await handleError(__filename, 'sendOrder', 'code', 'API通信でエラー', { productCode, params, }, err);

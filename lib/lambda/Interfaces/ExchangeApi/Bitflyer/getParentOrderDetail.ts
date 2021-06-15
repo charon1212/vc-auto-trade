@@ -45,7 +45,7 @@ export const getParentOrderDetail = async (productCode: ProductCode, params: Get
       queryParams: params,
     }, true, true);
     if (!res) return undefined;
-    const json = await res.json();
+    const json = res.json;
     json.expire_date = new Date(json.expire_date);
     return json as ParentOrderDetailBitflyer;
   } catch (err) {

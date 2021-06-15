@@ -58,7 +58,7 @@ export const getOrders = async (productCode: ProductCode, params?: GetOrderParam
     const res = await sendRequest({ uri: 'me/getchildorders', method: 'GET', queryParams }, true, true);
     if (!res) return []; // API通信でエラー、または200系でない。
 
-    const json = await res.json();
+    const json = res.json;
     for (let exec of json) {
       // 日付を文字列からDateへ変換する。
       exec.exec_date = convertStringToDate(exec.exec_date);

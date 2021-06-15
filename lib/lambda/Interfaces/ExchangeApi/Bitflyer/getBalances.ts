@@ -16,8 +16,7 @@ export const getBalances = async () => {
   try {
     const res = await sendRequest({ uri: 'me/getbalance', method: 'GET' }, true, true);
     if (!res) return []; // API通信でエラー、または200系でない。
-    const json = await res.json();
-    return json as BalanceBitflyer[];
+    return res.json as BalanceBitflyer[];
   } catch (err) {
     await handleError(__filename, 'getBalances', 'code', 'API通信でエラー', {}, err);
     return [];
