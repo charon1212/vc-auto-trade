@@ -34,7 +34,7 @@ export const getOrders = async (orderIdList: string[]) => {
     const queryParams = { orderId: orderIdList.join(',') };
     const res = await sendRequest({ uri: '/v1/orders', method: 'GET', queryParams }, true, true);
     if (!res) return [];
-    const json: any[] = (await res.json()).data.list;
+    const json: any[] = res.json.data.list;
     const orders = json.map((order) => ({
       ...order,
       size: +order.size,

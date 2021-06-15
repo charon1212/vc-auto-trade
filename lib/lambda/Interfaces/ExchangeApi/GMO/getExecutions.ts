@@ -26,7 +26,7 @@ export const getExecutions = async (orderId?: number, executionId?: string,) => 
     const queryParams = { orderId: orderId?.toString(), executionId, };
     const res = await sendRequest({ uri: '/v1/executions', method: 'GET', queryParams }, true, true);
     if (!res) return [];
-    const executions: any[] = (await res.json()).data.list;
+    const executions: any[] = res.json.data.list;
     const convertedResult = executions.map((item) => ({
       ...item,
       executionId: +item.executionId,

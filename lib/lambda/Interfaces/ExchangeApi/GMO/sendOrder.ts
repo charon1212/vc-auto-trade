@@ -34,8 +34,7 @@ export const sendOrder = async (params: SendOrderParams) => {
       method: 'POST',
     }, true, true);
     if (!res) return undefined; // API通信でエラー、または200系でない。
-    const json = await res.json();
-    const convertedResult = { data: +json.data };
+    const convertedResult = { data: +res.json.data };
     if (hasNanAttribute(convertedResult)) throw new Error('数値変換に失敗。');
     return convertedResult as SendOrderResult;
   } catch (err) {
