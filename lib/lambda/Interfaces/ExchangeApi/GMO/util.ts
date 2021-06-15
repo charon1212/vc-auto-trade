@@ -6,8 +6,9 @@
  * @returns NaNを持つ場合はtrue、そうでない場合はfalse。
  */
 export const hasNanAttribute = (obj: any) => {
-  for (let attr of obj) {
-    if (typeof attr === 'number' && Number.isNaN(attr)) return true;
+  for (let attr in obj) {
+    const value = obj[attr];
+    if (typeof value === 'number' && Number.isNaN(value)) return true;
   }
   return false;
 };
