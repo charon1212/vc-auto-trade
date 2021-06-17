@@ -58,7 +58,7 @@ export const sendRequest = async (params: { uri: string, method: RequestMethod, 
     }
 
     const json = await res.json();
-    if (method === 'POST') appLogger.info(`★★API-GMO-RESPONSE-${JSON.stringify({ url, json, })}`);
+    appLogger.info(`★★API-GMO-RESPONSE-${JSON.stringify({ url, json, })}`);
     return { response: res, json, };
   } catch (err) {
     await handleError(__filename, 'sendRequest', 'code', 'API通信でエラー', { params, isPrivateHTTP, handleNot2xxStatusAsError, }, err);
