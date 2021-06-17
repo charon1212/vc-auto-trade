@@ -31,7 +31,7 @@ export const getOrders = async (productSetting: ProductSetting,) => {
       let price = 0;
       let size = 0;
       for (let exec of associatedExecutions) {
-        price += exec.price;
+        price += exec.price * exec.size;
         size += exec.size;
       }
       orderFromApi.main.averagePrice = price / size;
