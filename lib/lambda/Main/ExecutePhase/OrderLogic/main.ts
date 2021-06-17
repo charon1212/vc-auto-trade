@@ -42,6 +42,7 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
           productContext.buyOrderPrice = undefined;
         }
         productContext.orderPhase = afterOrderPhase;
+        productContext.afterSendOrder = false;
         appLogger.info(`〇〇〇${productSetting.id}-ChangePhase-${beforeOrderPhase}→${afterOrderPhase}`);
         await sendSlackMessage(`★Phase: ${beforeOrderPhase} => ${afterOrderPhase}`, false);
       }, async (order) => { // 失敗したため、再度発注状態に戻る
