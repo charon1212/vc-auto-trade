@@ -21,7 +21,7 @@ export const getTrades = async (symbol: ProductCode, page?: number, count?: numb
         count: count?.toString(),
       },
       method: 'GET',
-    }, false, true);
+    }, false, true, true);
     if (!res) return []; // API通信でエラー、または200系でない。
 
     const trades = res.json.data.list;

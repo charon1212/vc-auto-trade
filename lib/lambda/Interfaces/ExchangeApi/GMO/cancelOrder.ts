@@ -8,7 +8,7 @@ export const cancelOrder = async (orderId: number,) => {
       uri: '/v1/cancelOrder',
       body: { orderId },
       method: 'POST',
-    }, true, true);
+    }, true, true, true);
     if (!res) return false;
     return true;
   } catch (err) {

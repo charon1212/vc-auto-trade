@@ -24,7 +24,7 @@ export type GetExecutionResultGmo = {
 export const getExecutions = async (orderId?: number, executionId?: string,) => {
   try {
     const queryParams = { orderId: orderId?.toString(), executionId, };
-    const res = await sendRequest({ uri: '/v1/executions', method: 'GET', queryParams }, true, true);
+    const res = await sendRequest({ uri: '/v1/executions', method: 'GET', queryParams }, true, true, true);
     if (!res) return [];
     const executions: any[] = res.json.data.list;
     const convertedResult = executions.map((item) => ({

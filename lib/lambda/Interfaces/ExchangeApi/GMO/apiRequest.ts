@@ -19,7 +19,7 @@ export type RequestMethod = 'GET' | 'POST';
  * @param handleNot2xxStatusAsError 200系以外のHTTPStatusをエラーとして扱う場合はtrue、そうでない場合はfalse。trueにすると、200系以外のステータスが来た場合はundefinedを返す。
  * @returns node-fetchのリクエストレスポンス。
  */
-export const sendRequest = async (params: { uri: string, method: RequestMethod, body?: object, headers?: { [key: string]: string }, queryParams?: { [key: string]: string | undefined } }, isPrivateHTTP: boolean, handleNot2xxStatusAsError: boolean,) => {
+export const sendRequest = async (params: { uri: string, method: RequestMethod, body?: object, headers?: { [key: string]: string }, queryParams?: { [key: string]: string | undefined } }, isPrivateHTTP: boolean, handleNot2xxStatusAsError: boolean, handleStatusNotZeroAsError: boolean,) => {
 
   const { uri, method, body, queryParams } = params;
   let headers;
@@ -58,6 +58,13 @@ export const sendRequest = async (params: { uri: string, method: RequestMethod, 
     }
 
     const json = await res.json();
+    const status = json.status;
+    if(handleStatusNotZeroAsError && status !== 0){
+      const message = `GMO-APIでステータスが正常(0)でない応答。詳細は下記のbody.messageを参照。
+■レスポンス情報::${JSON.stringify({ status: res.status, body: json })}`;
+      await handleError(__filename, 'sendRequest', 'code', message, { params, isPrivateHTTP, handleNot2xxStatusAsError, },);
+      return undefined;
+    }
     appLogger.info(`★★API-GMO-RESPONSE-${JSON.stringify({ url, json, })}`);
     return { response: res, json, };
   } catch (err) {

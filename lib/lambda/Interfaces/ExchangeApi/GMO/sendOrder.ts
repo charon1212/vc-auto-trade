@@ -32,7 +32,7 @@ export const sendOrder = async (params: SendOrderParams) => {
         size: params.size && params.size.toString(),
       },
       method: 'POST',
-    }, true, true);
+    }, true, true, true);
     if (!res) return undefined; // API通信でエラー、または200系でない。
     const convertedResult = { data: +res.json.data };
     if (hasNanAttribute(convertedResult)) throw new Error('数値変換に失敗。');
