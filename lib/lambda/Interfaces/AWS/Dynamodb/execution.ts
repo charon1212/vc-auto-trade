@@ -14,7 +14,7 @@ const getExecutionClassType = (productId: ProductId) => {
 export const setExecution = async (productId: ProductId, sortKey: string, data: ExecutionAggregated[]) => {
 
   const classType = getExecutionClassType(productId);
-  appLogger.info(`▲▲${productId}-AWS-DynamoDB-setExecution-CALL-${JSON.stringify({ classType, sortKey, data, })}`);
+  appLogger.info3(`▲▲${productId}-AWS-DynamoDB-setExecution-CALL-${JSON.stringify({ classType, sortKey, data, })}`);
 
   try {
     await putDynamoDB({ ClassType: classType, SortKey: sortKey, ExecutionList: data, });
@@ -38,7 +38,7 @@ export type ExecutionDynamoDB = {
  */
 export const searchExecutions = async (productId: ProductId, sortKeyStart: string, sotrKeyEnd: string) => {
   const classType = getExecutionClassType(productId);
-  appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchExecutions-CALL-${JSON.stringify({ classType, sortKeyStart, sotrKeyEnd, })}`);
+  appLogger.info3(`▲▲${productId}-AWS-DynamoDB-searchExecutions-CALL-${JSON.stringify({ classType, sortKeyStart, sotrKeyEnd, })}`);
 
   try {
     const res = await searchDynamoDB({
@@ -46,7 +46,7 @@ export const searchExecutions = async (productId: ProductId, sortKeyStart: strin
       paramLabel: { '#PK': 'ClassType', '#SK': 'SortKey', },
       paramValue: { ':pk': classType, ':sk1': sortKeyStart, ':sk2': sotrKeyEnd, },
     });
-    appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchExecutions-RESULT-${JSON.stringify({ res })}`);
+    appLogger.info3(`▲▲${productId}-AWS-DynamoDB-searchExecutions-RESULT-${JSON.stringify({ res })}`);
     return {
       count: res.Count,
       result: res.Items as ExecutionDynamoDB[] | undefined,
@@ -66,7 +66,7 @@ export const searchExecutions = async (productId: ProductId, sortKeyStart: strin
  */
 export const deleteExecution = async (productId: ProductId, sortKey: string) => {
   const classType = getExecutionClassType(productId);
-  appLogger.info(`▲▲${productId}-AWS-DynamoDB-deleteExecution-CALL-${JSON.stringify({ classType, sortKey, })}`);
+  appLogger.info3(`▲▲${productId}-AWS-DynamoDB-deleteExecution-CALL-${JSON.stringify({ classType, sortKey, })}`);
 
   try {
     await db.delete({

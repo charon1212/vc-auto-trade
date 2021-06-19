@@ -12,7 +12,7 @@ const s3 = new AWS.S3();
 export const writeTextFile = async (filePath: string, body: string) => {
 
   const bucketName = process.env.BucketName || '';
-  appLogger.info(`▲▲AWS-S3-writeTextFile-CALL-${JSON.stringify({ bucketName, filePath, body, })}`);
+  appLogger.info3(`▲▲AWS-S3-writeTextFile-CALL-${JSON.stringify({ bucketName, filePath, body, })}`);
   try {
     return await s3.putObject({
       Bucket: bucketName, Key: filePath, Body: body,

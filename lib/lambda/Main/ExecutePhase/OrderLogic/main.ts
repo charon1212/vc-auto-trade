@@ -43,7 +43,7 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
         }
         productContext.orderPhase = afterOrderPhase;
         productContext.afterSendOrder = false;
-        appLogger.info(`〇〇〇${productSetting.id}-ChangePhase-${beforeOrderPhase}→${afterOrderPhase}`);
+        appLogger.info1(`〇〇〇${productSetting.id}-ChangePhase-${beforeOrderPhase}→${afterOrderPhase}`);
         await sendSlackMessage(`★Phase: ${beforeOrderPhase} => ${afterOrderPhase}`, false);
       }, async (order) => { // 失敗したため、再度発注状態に戻る
         productContext.afterSendOrder = false;
@@ -84,7 +84,7 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
       if (cancelResult) await sendStopLossOrder(productSetting, balanceVirtual.available, async (sellOrder) => { // 損切注文を発注できた場合
         newOrders.push(sellOrder);
         productContext.orderPhase = 'StopLoss';
-        appLogger.info(`〇〇〇${productSetting.id}-ChangePhase-Sell→StopLoss`);
+        appLogger.info1(`〇〇〇${productSetting.id}-ChangePhase-Sell→StopLoss`);
         productContext.afterSendOrder = true;
         productContext.orderId = sellOrder.id;
         productContext.startBuyTimestamp = Date.now() + 60 * 60 * 1000; // 1時間後にする。
@@ -95,7 +95,7 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
     const startBuyTimestamp = productContext.startBuyTimestamp;
     if (startBuyTimestamp && Date.now() > startBuyTimestamp) {
       productContext.orderPhase = 'Buy';
-      appLogger.info(`〇〇〇${productSetting.id}-ChangePhase-Wait→Buy`);
+      appLogger.info1(`〇〇〇${productSetting.id}-ChangePhase-Wait→Buy`);
       productContext.startBuyTimestamp = undefined;
     }
   }
@@ -162,7 +162,7 @@ const judgeOrderSuccess = async (productSetting: ProductSetting, orderId: string
     await handleError(__filename, 'judgeOrderSuccess', 'code', '注文待機中に、対象の注文が見つかりませんでした。', { acceptanceId: orderId, orderList, });
     return;
   }
-  appLogger.info(`〇〇〇${productSetting.id}-TargetOrder-${JSON.stringify({ targetOrder })}`);
+  appLogger.info1(`〇〇〇${productSetting.id}-TargetOrder-${JSON.stringify({ targetOrder })}`);
   if (targetOrder.state === 'INVALID') {// 注文に失敗した場合
     await onFail(targetOrder);
   } else if (targetOrder.state === 'COMPLETED') { // 注文に成功した場合
@@ -175,7 +175,7 @@ const judgeStopLoss = (productSetting: ProductSetting, context: VCATProductConte
 
   const latestExecutionAggregated = getLatestExecution(shortAggregatedExecutions);
   const result = Boolean(latestExecutionAggregated && context.buyOrderPrice && latestExecutionAggregated.price < context.buyOrderPrice * 0.97);
-  appLogger.info(`〇〇〇${productSetting.id}-Judge-Buy-${JSON.stringify({ latestExecutionAggregated, context, })}`);
+  appLogger.info1(`〇〇〇${productSetting.id}-Judge-StopLoss-${JSON.stringify({ latestExecutionAggregated, context, })}`);
   return result
 
 };

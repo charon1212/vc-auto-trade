@@ -14,7 +14,7 @@ const getLongExecutionClassType = (productId: ProductId) => {
 export const setLongExecution = async (productId: ProductId, sortKey: string, data: ExecutionAggregated) => {
 
   const classType = getLongExecutionClassType(productId);
-  appLogger.info(`▲▲${productId}-AWS-DynamoDB-setLongExecution-CALL-${JSON.stringify({ classType, sortKey, data })}`);
+  appLogger.info3(`▲▲${productId}-AWS-DynamoDB-setLongExecution-CALL-${JSON.stringify({ classType, sortKey, data })}`);
 
   try {
     await putDynamoDB({ ClassType: classType, SortKey: sortKey, data: data, });
@@ -39,7 +39,7 @@ export type LongExecutionDynamoDB = {
 export const searchLongExecutions = async (productId: ProductId, sortKeyStart: string, sotrKeyEnd: string) => {
 
   const classType = getLongExecutionClassType(productId);
-  appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchLongExecutions-CALL-${JSON.stringify({ classType, sortKeyStart, sotrKeyEnd })}`);
+  appLogger.info3(`▲▲${productId}-AWS-DynamoDB-searchLongExecutions-CALL-${JSON.stringify({ classType, sortKeyStart, sotrKeyEnd })}`);
 
   try {
     const res = await searchDynamoDB({
@@ -47,7 +47,7 @@ export const searchLongExecutions = async (productId: ProductId, sortKeyStart: s
       paramLabel: { '#PK': 'ClassType', '#SK': 'SortKey', },
       paramValue: { ':pk': classType, ':sk1': sortKeyStart, ':sk2': sotrKeyEnd, },
     });
-    appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchLongExecutions-RESULT-${JSON.stringify({ res })}`);
+    appLogger.info3(`▲▲${productId}-AWS-DynamoDB-searchLongExecutions-RESULT-${JSON.stringify({ res })}`);
     return {
       count: res.Count,
       result: res.Items as LongExecutionDynamoDB[] | undefined,

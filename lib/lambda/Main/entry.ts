@@ -38,8 +38,10 @@ const productEntry = async (productSetting: ProductSetting) => {
   // 基準時刻を作る。
   const std = new StandardTime(Date.now());
 
+  appLogger.info1(`〇${productSetting.id}-EntryStart-${JSON.stringify({ std: std.getStd(), productContext, })}`);
+
   /** ■■ 入力フェーズ ■■ */
-  appLogger.info(`〇〇${productSetting.id}-PhaseInput-Start-${JSON.stringify({ productContext, })}`);
+  appLogger.info3(`〇〇${productSetting.id}-PhaseInput-Start`);
   let executions: Execution[] = []; // 「基準時刻の1分前」以降の約定履歴の一覧
   let shortAggregatedExecutions: ExecutionAggregated[] = []; // 10秒間隔で集計した集計約定のリスト
   let longAggregatedExecutions: ExecutionAggregated[] = []; // 1時間間隔で集計した集計約定のリスト
@@ -63,24 +65,26 @@ const productEntry = async (productSetting: ProductSetting) => {
     await handleError(__filename, 'productEntry', 'code', '資産情報を取得できませんでした。', { productSetting, });
     return;
   }
-  appLogger.info(`〇〇${productSetting.id}-PhaseInput-End-${JSON.stringify({ executions, orders, balanceReal, balanceVirtual, shortAggregatedExecutions, longAggregatedExecutions, })}`);
+  appLogger.info3(`〇〇${productSetting.id}-PhaseInput-End-${JSON.stringify({ executions, orders, balanceReal, balanceVirtual, shortAggregatedExecutions, longAggregatedExecutions, })}`);
 
   /** ■■ 処理フェーズ ■■ */
-  appLogger.info(`〇〇${productSetting.id}-PhaseExec-Start`);
+  appLogger.info3(`〇〇${productSetting.id}-PhaseExec-Start`);
   const { newAggregatedExecutions, updatedOrder, newLongAggregatedExecution } = await execute({ executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, std, });
 
   // 1分間の分だけ抽出
   const newAggregatedExecutions1Min = newAggregatedExecutions.slice(0, 6);
-  appLogger.info(`〇〇${productSetting.id}-PhaseExec-End-${JSON.stringify({ newAggregatedExecutions, updatedOrder, newLongAggregatedExecution })}`);
+  appLogger.info3(`〇〇${productSetting.id}-PhaseExec-End-${JSON.stringify({ newAggregatedExecutions, updatedOrder, newLongAggregatedExecution })}`);
 
   /** ■■ 保存フェーズ ■■ */
-  appLogger.info(`〇〇${productSetting.id}-PhaseOutput-Start`);
+  appLogger.info3(`〇〇${productSetting.id}-PhaseOutput-Start`);
   await asyncExecution(
     async () => { await setExecution(productSetting.id, std.getStdBefore1Min().toString(), newAggregatedExecutions1Min); },
     async () => { if (newLongAggregatedExecution) { await setLongExecution(productSetting.id, std.getHourStdBefore1Hour().toString(), newLongAggregatedExecution) } },
     ...(updatedOrder.map((orderInfo) => (async () => { await saveOrder(productSetting.id, orderInfo.order, orderInfo.beforeState) }))),
   );
-  appLogger.info(`〇〇${productSetting.id}-PhaseOutput-End-${JSON.stringify({ productContext, })}`);
+  appLogger.info3(`〇〇${productSetting.id}-PhaseOutput-End`);
+
+  appLogger.info1(`〇${productSetting.id}-EntryEnd-${JSON.stringify({ std: std.getStd(), productContext, })}`);
 
 };
 

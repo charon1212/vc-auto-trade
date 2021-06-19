@@ -49,7 +49,7 @@ export const setOrder = async (productId: ProductId, data: SimpleOrder) => {
     orderDateTimestamp: data.orderDate.getTime(),
   }
 
-  appLogger.info(`▲▲${productId}-AWS-DynamoDB-setOrder-CALL-${JSON.stringify({ classType, sortKey, convertedData, })}`);
+  appLogger.info3(`▲▲${productId}-AWS-DynamoDB-setOrder-CALL-${JSON.stringify({ classType, sortKey, convertedData, })}`);
 
   try {
     await putDynamoDB({ ClassType: classType, SortKey: sortKey, data: convertedData, });
@@ -82,7 +82,7 @@ export const searchOrders = async (productId: ProductId, state: OrderState,) => 
     return { count: 0, result: [] };
   }
 
-  appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchOrders-CALL-${JSON.stringify({ classType, stateCode, })}`);
+  appLogger.info3(`▲▲${productId}-AWS-DynamoDB-searchOrders-CALL-${JSON.stringify({ classType, stateCode, })}`);
 
   try {
     const res = await searchDynamoDB({
@@ -90,7 +90,7 @@ export const searchOrders = async (productId: ProductId, state: OrderState,) => 
       paramLabel: { '#PK': 'ClassType', '#SK': 'SortKey', },
       paramValue: { ':pk': classType, ':skprefix': stateCode, },
     });
-    appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchOrders-RESULT-${JSON.stringify({ res, })}`);
+    appLogger.info3(`▲▲${productId}-AWS-DynamoDB-searchOrders-RESULT-${JSON.stringify({ res, })}`);
     const resultItem = res.Items as { ClassType: string, SortKey: string, data: OrderSave, }[] | undefined;
     return {
       count: res.Count,
@@ -112,7 +112,7 @@ export const searchOrders = async (productId: ProductId, state: OrderState,) => 
 export const deleteOrder = async (productId: ProductId, state: OrderState, id: string, orderDate: Date,) => {
   const classType = getOrderClassType(productId);
   const sortKey = await getSortKey(state, id, orderDate);
-  appLogger.info(`▲▲${productId}-AWS-DynamoDB-deleteOrder-CALL-${JSON.stringify({ classType, sortKey, })}`);
+  appLogger.info3(`▲▲${productId}-AWS-DynamoDB-deleteOrder-CALL-${JSON.stringify({ classType, sortKey, })}`);
   try {
     await db.delete({
       TableName: processEnv.TableName,

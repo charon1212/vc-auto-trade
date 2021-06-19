@@ -37,7 +37,7 @@ export const sendRequest = async (params: { uri: string, method: RequestMethod, 
     const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method, uri, params.body) : {};
     headers = { ...additionalHeaders, ...params.headers };
 
-    appLogger.info(`★★API-GMO-REQUEST-${JSON.stringify({ params, url, method, headers, body, })}`);
+    appLogger.info2(`★★API-GMO-REQUEST-${JSON.stringify({ params, url, method, headers, body, })}`);
 
   } catch (err) {
     await handleError(__filename, 'sendRequest', 'code', 'リクエスト前処理で失敗', { params, isPrivateHTTP, handleNot2xxStatusAsError, }, err);
@@ -65,7 +65,7 @@ export const sendRequest = async (params: { uri: string, method: RequestMethod, 
       await handleError(__filename, 'sendRequest', 'code', message, { params, isPrivateHTTP, handleNot2xxStatusAsError, },);
       return undefined;
     }
-    appLogger.info(`★★API-GMO-RESPONSE-${JSON.stringify({ url, json, })}`);
+    appLogger.info2(`★★API-GMO-RESPONSE-${JSON.stringify({ url, json, })}`);
     return { response: res, json, };
   } catch (err) {
     await handleError(__filename, 'sendRequest', 'code', 'API通信でエラー', { params, isPrivateHTTP, handleNot2xxStatusAsError, }, err);

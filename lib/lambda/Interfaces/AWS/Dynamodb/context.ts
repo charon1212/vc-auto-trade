@@ -41,9 +41,9 @@ const getProductContextClassType = (productId: ProductId) => {
 export const getProductContext = async (productId: ProductId): Promise<VCATProductContext> => {
   try {
     const classType = getProductContextClassType(productId);
-    appLogger.info(`▲▲${productId}-AWS-DynamoDB-getProductContext-CALL-${JSON.stringify({ classType, contextSortKey })}`);
+    appLogger.info3(`▲▲${productId}-AWS-DynamoDB-getProductContext-CALL-${JSON.stringify({ classType, contextSortKey })}`);
     const res = await getDynamoDB(classType, contextSortKey);
-    appLogger.info(`▲▲${productId}-AWS-DynamoDB-getProductContext-RESULT-${JSON.stringify({ res })}`);
+    appLogger.info3(`▲▲${productId}-AWS-DynamoDB-getProductContext-RESULT-${JSON.stringify({ res })}`);
     if (res) {
       const record = res as ContextRecord;
       return record.data;
@@ -58,7 +58,7 @@ export const getProductContext = async (productId: ProductId): Promise<VCATProdu
 
 export const setProductContext = async (productId: ProductId, data: VCATProductContext) => {
   const classType = getProductContextClassType(productId);
-  appLogger.info(`▲▲${productId}-AWS-DynamoDB-setProductContext-CALL-${JSON.stringify({ data, classType, contextSortKey })}`);
+  appLogger.info3(`▲▲${productId}-AWS-DynamoDB-setProductContext-CALL-${JSON.stringify({ data, classType, contextSortKey })}`);
   const item: ContextRecord = {
     ClassType: getProductContextClassType(productId),
     SortKey: contextSortKey,

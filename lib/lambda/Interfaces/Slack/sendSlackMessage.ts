@@ -17,7 +17,7 @@ export const sendSlackMessage = async (text: string, postToErrorChannel: boolean
   const body = {channel, text};
 
   const params = {url, method, headers, body};
-  appLogger.info(`sendRequest: ■params=${JSON.stringify(params)}`);
+  appLogger.info1(`sendRequest: ■params=${JSON.stringify(params)}`);
 
   const res = await fetch(url, {
     method,

@@ -10,14 +10,14 @@ import { getOrders as getGmoOrders, OrderStatusGMO } from './GMO/getOrders';
 import { sendOrder as sendGmoOrder } from './GMO/sendOrder';
 
 export const getOrders = async (productSetting: ProductSetting, orders: SimpleOrder[]) => {
-  appLogger.info(`★★${productSetting.id}-API-getAllOrders-CALL`);
+  appLogger.info2(`★★${productSetting.id}-API-getAllOrders-CALL`);
   let newOrders: SimpleOrder[] = [];
   if (productSetting.exchangeCode === 'Bitflyer') {
     newOrders = await getOrdersBitflyer(productSetting, orders);
   } else if (productSetting.exchangeCode === 'GMO') {
     newOrders = await getOrdersGmo(orders);
   }
-  appLogger.info(`★★${productSetting.id}-API-getAllOrders-RESULT-${JSON.stringify({ newOrders })}`);
+  appLogger.info2(`★★${productSetting.id}-API-getAllOrders-RESULT-${JSON.stringify({ newOrders })}`);
   return newOrders;
 };
 
@@ -81,14 +81,14 @@ const convertGmoOrderState = (state: OrderStatusGMO): OrderState => {
 
 export const sendOrder = async (productSetting: ProductSetting, orderType: 'LIMIT' | 'MARKET', side: 'BUY' | 'SELL', sizeUnit: number, price?: number) => {
 
-  appLogger.info(`★★${productSetting.id}-API-sendOrder-CALL-${JSON.stringify({ productSetting, orderType, side, sizeUnit, price, })}`);
+  appLogger.info2(`★★${productSetting.id}-API-sendOrder-CALL-${JSON.stringify({ productSetting, orderType, side, sizeUnit, price, })}`);
   let order: SimpleOrder | undefined = undefined;
   if (productSetting.exchangeCode === 'Bitflyer') {
     order = await sendOrderBitflyer(productSetting, orderType, side, sizeUnit, price,);
   } else if (productSetting.exchangeCode === 'GMO') {
     order = await sendOrderGmo(productSetting, orderType, side, sizeUnit, price,);
   }
-  appLogger.info(`★★${productSetting.id}-API-sendOrder-RESULT-${JSON.stringify({ order, })}`);
+  appLogger.info2(`★★${productSetting.id}-API-sendOrder-RESULT-${JSON.stringify({ order, })}`);
   return order;
 };
 
@@ -146,14 +146,14 @@ export const sendOrderGmo = async (productSetting: ProductSetting, orderType: 'L
 
 export const cancelOrder = async (productSetting: ProductSetting, order: SimpleOrder) => {
 
-  appLogger.info(`★★${productSetting.id}-API-cancelOrder-CALL-${JSON.stringify({ productSetting, order, })}`);
+  appLogger.info2(`★★${productSetting.id}-API-cancelOrder-CALL-${JSON.stringify({ productSetting, order, })}`);
   let result: boolean = false;
   if (productSetting.exchangeCode === 'Bitflyer') {
     result = await cancelBitflyerOrder(productSetting.productCode, { child_order_acceptance_id: order.idBitflyer?.acceptanceId });
   } else if (productSetting.exchangeCode === 'GMO') {
     result = await cancelGmoOrder(order.idGmo!); // GMOの注文であれば、idGmoは必須…のはず。
   }
-  appLogger.info(`★★${productSetting.id}-API-cancelOrder-RESULT-${JSON.stringify({ result, })}`);
+  appLogger.info2(`★★${productSetting.id}-API-cancelOrder-RESULT-${JSON.stringify({ result, })}`);
   return result;
 
 };

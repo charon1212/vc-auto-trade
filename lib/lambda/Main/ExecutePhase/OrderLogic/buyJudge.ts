@@ -54,7 +54,7 @@ export const judgeBuyTiming = (productSetting: ProductSetting, shortAggregatedEx
     judgeResult = true;
   }
 
-  appLogger.info(`〇〇〇${productSetting.id}-Judge-Buy-${JSON.stringify({ judgeResult, reasonStr, relativeIndexRate, moveAveLogStr, })}`);
+  appLogger.info1(`〇〇〇${productSetting.id}-Judge-Buy-${JSON.stringify({ judgeResult, reasonStr, relativeIndexRate, moveAveLogStr, })}`);
 
   return judgeResult;
 
