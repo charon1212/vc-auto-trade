@@ -77,22 +77,18 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
     }
   } else if (productContext.orderPhase === 'Sell' && productContext.afterSendOrder) {
     // 損切りの判断をする。
-    // 直近の約定価格を取得
-    const latestExecutionAggregated = getLatestExecution(shortAggregatedExecutions);
-    if (latestExecutionAggregated && productContext.buyOrderPrice) {
-      // 直近の約定価格が、買った時の値段の3%を下回っていたら、成行で売って損切に。
-      if (latestExecutionAggregated.price < productContext.buyOrderPrice * 0.97) {
-        const targetOrder = orders.find((order) => {order.id === productContext.orderId});
-        const cancelResult = targetOrder && await cancelOrder(productSetting, targetOrder);
-        if (cancelResult) await sendStopLossOrder(productSetting, balanceVirtual.available, async (sellOrder) => { // 損切注文を発注できた場合
-          newOrders.push(sellOrder);
-          productContext.orderPhase = 'StopLoss';
-          appLogger.info(`〇〇〇${productSetting.id}-ChangePhase-Sell→StopLoss`);
-          productContext.afterSendOrder = true;
-          productContext.orderId = sellOrder.id;
-          productContext.startBuyTimestamp = Date.now() + 60 * 60 * 1000; // 1時間後にする。
-        });
-      }
+    // 直近の約定価格が、買った時の値段の3%を下回っていたら、成行で売って損切に。
+    if (judgeStopLoss(productSetting, productContext, shortAggregatedExecutions)) {
+      const targetOrder = orders.find((order) => { order.id === productContext.orderId });
+      const cancelResult = targetOrder && await cancelOrder(productSetting, targetOrder);
+      if (cancelResult) await sendStopLossOrder(productSetting, balanceVirtual.available, async (sellOrder) => { // 損切注文を発注できた場合
+        newOrders.push(sellOrder);
+        productContext.orderPhase = 'StopLoss';
+        appLogger.info(`〇〇〇${productSetting.id}-ChangePhase-Sell→StopLoss`);
+        productContext.afterSendOrder = true;
+        productContext.orderId = sellOrder.id;
+        productContext.startBuyTimestamp = Date.now() + 60 * 60 * 1000; // 1時間後にする。
+      });
     }
   } else if (productContext.orderPhase === 'Wait') {
     // 再開時間に到達した場合、買い状態に遷移する。
@@ -112,7 +108,7 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
  * 実際に買い注文を送信し、成功した場合はその結果を配列で返却する。失敗した場合は空配列を返却する。
  */
 const sendBuyOrder = async (productSetting: ProductSetting, onSuccess: (order: SimpleOrder) => void | Promise<void>) => {
-  const sizeByUnit = 10; // とりあえず、1XRP買う。
+  const sizeByUnit = 5;
   const buyOrder = await sendOrder(productSetting, 'MARKET', 'BUY', sizeByUnit);
   if (buyOrder) await onSuccess(buyOrder);
 };
@@ -122,7 +118,7 @@ const sendBuyOrder = async (productSetting: ProductSetting, onSuccess: (order: S
  */
 const sendSellOrder = async (productSetting: ProductSetting, availableBalanceVirtual: number, buyPrice: number, onSuccess: (order: SimpleOrder) => void | Promise<void>) => {
   const size = Math.floor(availableBalanceVirtual / productSetting.orderUnit); // 売れるだけ売る
-  const price = moveUp(buyPrice * 1.005, 2, 'floor'); // 一応、少数以下2桁で四捨五入する。
+  const price = moveUp(buyPrice * 1.005, 0, 'floor'); // 整数に四捨五入する。
   const sellOrder = await sendOrder(productSetting, 'LIMIT', 'SELL', size, price);
   if (sellOrder) await onSuccess(sellOrder);
 };
@@ -172,5 +168,14 @@ const judgeOrderSuccess = async (productSetting: ProductSetting, orderId: string
   } else if (targetOrder.state === 'COMPLETED') { // 注文に成功した場合
     await onSuccess(targetOrder);
   }
+
+};
+
+const judgeStopLoss = (productSetting: ProductSetting, context: VCATProductContext, shortAggregatedExecutions: ExecutionAggregated[],) => {
+
+  const latestExecutionAggregated = getLatestExecution(shortAggregatedExecutions);
+  const result = Boolean(latestExecutionAggregated && context.buyOrderPrice && latestExecutionAggregated.price < context.buyOrderPrice * 0.97);
+  appLogger.info(`〇〇〇${productSetting.id}-Judge-Buy-${JSON.stringify({ latestExecutionAggregated, context, })}`);
+  return result
 
 };
