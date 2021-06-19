@@ -9,6 +9,7 @@ import { getProductContext } from "../../context";
 import { ProductSetting } from "../../productSettings";
 import { judgeBuyTiming } from "./buyJudge";
 import { getLatestExecution } from "./judgeUtil";
+import { OrderStateController } from "./orderStateController";
 
 export type Input = {
   shortAggregatedExecutions: ExecutionAggregated[],
@@ -25,29 +26,24 @@ export type Input = {
 export const main = async (input: Input): Promise<SimpleOrder[]> => {
 
   const { shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, } = input;
-  const productContext = await getProductContext(productSetting.id);
 
-  if (!productContext) return [];
+  const productContext = await getProductContext(productSetting.id);
+  if (!productContext) {
+    await handleError(__filename, 'main', 'code', 'コンテキストが見つかりませんでした。', { input });
+    return [];
+  }
+
+  const targetOrder = (productContext.orderId !== undefined) && orders.find((order) => (order.id === productContext.orderId));
+
+  const orderStateController = new OrderStateController(productSetting, productContext);
 
   /** ■■ 発注後の場合、注文の状態を確認して状態遷移する ■■ */
   if (productContext.afterSendOrder) {
     await judgeOrderSuccess(productSetting, productContext.orderId!, orders,
       async (order) => { // 成功したため、次のフェーズに遷移
-        const beforeOrderPhase = productContext.orderPhase;
-        const afterOrderPhase = getNextOrderPhase(beforeOrderPhase);
-        productContext.orderId = undefined;
-        if (beforeOrderPhase === 'Buy') {
-          productContext.buyOrderPrice = order.main.averagePrice;
-        } else {
-          productContext.buyOrderPrice = undefined;
-        }
-        productContext.orderPhase = afterOrderPhase;
-        productContext.afterSendOrder = false;
-        appLogger.info1(`〇〇〇${productSetting.id}-ChangePhase-${beforeOrderPhase}→${afterOrderPhase}`);
-        await sendSlackMessage(`★Phase: ${beforeOrderPhase} => ${afterOrderPhase}`, false);
+        orderStateController.onOrderSuccess(order.main.averagePrice);
       }, async (order) => { // 失敗したため、再度発注状態に戻る
-        productContext.afterSendOrder = false;
-        productContext.orderId = undefined;
+        orderStateController.onOrderFailed();
       });
   }
 
@@ -58,9 +54,7 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
     const judgeResult = judgeBuyTiming(productSetting, shortAggregatedExecutions);
     if (judgeResult) {
       await sendBuyOrder(productSetting, async (buyOrder) => { // 買い注文に成功した場合の処理
-        productContext.afterSendOrder = true;
-        productContext.orderId = buyOrder.id;
-        await sendSlackMessage(`★Send buy order.`, false);
+        orderStateController.onSendOrder(buyOrder);
         newOrders.push(buyOrder);
       });
     }
@@ -69,9 +63,7 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
     const buyPrice = productContext.buyOrderPrice;
     if (buyPrice) {
       await sendSellOrder(productSetting, balanceVirtual.available, buyPrice, async (sellOrder) => { // 売り注文に成功した場合の処理
-        productContext.afterSendOrder = true;
-        productContext.orderId = sellOrder.id;
-        await sendSlackMessage(`★Send sell order. ${JSON.stringify({ buyPrice, sellPrice: sellOrder.main.price })}`, false);
+        orderStateController.onSendOrder(sellOrder);
         newOrders.push(sellOrder);
       });
     }
@@ -83,22 +75,18 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
       appLogger.debug(`****debug****${JSON.stringify({ orders, productContext, targetOrder })}`);
       const cancelResult = targetOrder && await cancelOrder(productSetting, targetOrder);
       const size = (targetOrder?.main.size || 0) / productSetting.orderUnit;
-      if (cancelResult) await sendStopLossOrder(productSetting, size, async (sellOrder) => { // 損切注文を発注できた場合
-        newOrders.push(sellOrder);
-        productContext.orderPhase = 'StopLoss';
-        appLogger.info1(`〇〇〇${productSetting.id}-ChangePhase-Sell→StopLoss`);
-        productContext.afterSendOrder = true;
-        productContext.orderId = sellOrder.id;
-        productContext.startBuyTimestamp = Date.now() + 60 * 60 * 1000; // 1時間後にする。
-      });
+      if (cancelResult) {
+        await sendStopLossOrder(productSetting, size, async (sellOrder) => { // 損切注文を発注できた場合
+          newOrders.push(sellOrder);
+          orderStateController.onStopLoss(sellOrder, 60 * 60 * 1000);
+        });
+      }
     }
   } else if (productContext.orderPhase === 'Wait') {
     // 再開時間に到達した場合、買い状態に遷移する。
     const startBuyTimestamp = productContext.startBuyTimestamp;
     if (startBuyTimestamp && Date.now() > startBuyTimestamp) {
-      productContext.orderPhase = 'Buy';
-      appLogger.info1(`〇〇〇${productSetting.id}-ChangePhase-Wait→Buy`);
-      productContext.startBuyTimestamp = undefined;
+      orderStateController.onStartBuy();
     }
   }
 
