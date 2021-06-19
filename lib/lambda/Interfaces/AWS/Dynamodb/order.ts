@@ -3,7 +3,7 @@ import { processEnv } from "../../../Common/processEnv";
 import handleError from "../../../HandleError/handleError";
 import { ProductId } from "../../../Main/productSettings";
 import { SimpleOrder, OrderState } from "../../DomainType";
-import { db } from "./db";
+import { db, putDynamoDB, searchDynamoDB } from "./db";
 
 const suffixOrder = 'ORDER';
 
@@ -52,14 +52,7 @@ export const setOrder = async (productId: ProductId, data: SimpleOrder) => {
   appLogger.info(`▲▲${productId}-AWS-DynamoDB-setOrder-CALL-${JSON.stringify({ classType, sortKey, convertedData, })}`);
 
   try {
-    await db.put({
-      TableName: processEnv.TableName,
-      Item: {
-        ClassType: getOrderClassType(productId),
-        SortKey: sortKey,
-        data: convertedData,
-      }
-    }).promise();
+    await putDynamoDB({ ClassType: classType, SortKey: sortKey, data: convertedData, });
   } catch (err) {
     await handleError(__filename, 'setOrder', 'code', 'DBの保存に失敗。', { productId, data, }, err);
   }
@@ -92,18 +85,11 @@ export const searchOrders = async (productId: ProductId, state: OrderState,) => 
   appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchOrders-CALL-${JSON.stringify({ classType, stateCode, })}`);
 
   try {
-    const res = await db.query({
-      TableName: processEnv.TableName,
-      KeyConditionExpression: '#PK = :pk AND begins_with (#SK, :skprefix)',
-      ExpressionAttributeNames: {
-        '#PK': 'ClassType',
-        '#SK': 'SortKey',
-      },
-      ExpressionAttributeValues: {
-        ':pk': getOrderClassType(productId),
-        ':skprefix': stateCode,
-      },
-    }).promise();
+    const res = await searchDynamoDB({
+      condition: '#PK = :pk AND begins_with (#SK, :skprefix)',
+      paramLabel: { '#PK': 'ClassType', '#SK': 'SortKey', },
+      paramValue: { ':pk': classType, ':skprefix': stateCode, },
+    });
     appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchOrders-RESULT-${JSON.stringify({ res, })}`);
     const resultItem = res.Items as { ClassType: string, SortKey: string, data: OrderSave, }[] | undefined;
     return {

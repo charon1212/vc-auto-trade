@@ -41,7 +41,7 @@ const exec = async (productSetting: ProductSetting, targetDate: Date) => {
   const res = await searchExecutions(productSetting.id, startTimestamp.toString(), endTimestamp.toString());
 
   if (res?.count && res.count > 0) {
-    const csvBody = makeCsvBody(res.result);
+    const csvBody = makeCsvBody(res.result || []);
     const yearMonthStr = `${targetDate.getFullYear()}-${targetDate.getMonth() + 1}`;
     const yearMonthDayStr = yearMonthStr + `-${targetDate.getDate()}`;
     const csvFilePath = `EXEC_HISTORY_${productSetting.id}_${yearMonthStr}/data_${yearMonthDayStr}.csv`;

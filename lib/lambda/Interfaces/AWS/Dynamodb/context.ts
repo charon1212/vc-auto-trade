@@ -2,7 +2,7 @@ import { appLogger } from "../../../Common/log";
 import { processEnv } from "../../../Common/processEnv";
 import handleError from "../../../HandleError/handleError";
 import { ProductId } from "../../../Main/productSettings";
-import { db } from "./db";
+import { db, getDynamoDB, putDynamoDB } from "./db";
 
 export type VCATProductContext = {
   lastExecution?: {
@@ -42,16 +42,10 @@ export const getProductContext = async (productId: ProductId): Promise<VCATProdu
   try {
     const classType = getProductContextClassType(productId);
     appLogger.info(`▲▲${productId}-AWS-DynamoDB-getProductContext-CALL-${JSON.stringify({ classType, contextSortKey })}`);
-    const res = await db.get({
-      TableName: processEnv.TableName,
-      Key: {
-        'ClassType': classType,
-        'SortKey': contextSortKey,
-      },
-    }).promise();
+    const res = await getDynamoDB(classType, contextSortKey);
     appLogger.info(`▲▲${productId}-AWS-DynamoDB-getProductContext-RESULT-${JSON.stringify({ res })}`);
-    if (res.Item) {
-      const record = res.Item as ContextRecord;
+    if (res) {
+      const record = res as ContextRecord;
       return record.data;
     } else {
       return {};
@@ -71,10 +65,7 @@ export const setProductContext = async (productId: ProductId, data: VCATProductC
     data: data,
   };
   try {
-    await db.put({
-      TableName: processEnv.TableName,
-      Item: item,
-    }).promise();
+    await putDynamoDB(item);
   } catch (err) {
     await handleError(__filename, 'setProductContext', 'code', 'ProductContextの保存に失敗。', { productId, data }, err);
     return;

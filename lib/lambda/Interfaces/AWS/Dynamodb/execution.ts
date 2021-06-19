@@ -1,6 +1,6 @@
 import { ExecutionAggregated } from "../../../Interfaces/DomainType";
 import handleError from "../../../HandleError/handleError";
-import { db } from "./db";
+import { db, putDynamoDB, searchDynamoDB } from "./db";
 import { processEnv } from "../../../Common/processEnv";
 import { appLogger } from "../../../Common/log";
 import { ProductId } from "../../../Main/productSettings";
@@ -17,14 +17,7 @@ export const setExecution = async (productId: ProductId, sortKey: string, data: 
   appLogger.info(`▲▲${productId}-AWS-DynamoDB-setExecution-CALL-${JSON.stringify({ classType, sortKey, data, })}`);
 
   try {
-    await db.put({
-      TableName: processEnv.TableName,
-      Item: {
-        ClassType: getExecutionClassType(productId),
-        SortKey: sortKey,
-        ExecutionList: data,
-      }
-    }).promise();
+    await putDynamoDB({ ClassType: classType, SortKey: sortKey, ExecutionList: data, });
   } catch (err) {
     await handleError(__filename, 'setExecution', 'code', 'DBの保存に失敗。', { productId, sortKey, data, }, err);
   }
@@ -48,23 +41,15 @@ export const searchExecutions = async (productId: ProductId, sortKeyStart: strin
   appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchExecutions-CALL-${JSON.stringify({ classType, sortKeyStart, sotrKeyEnd, })}`);
 
   try {
-    const res = await db.query({
-      TableName: processEnv.TableName,
-      KeyConditionExpression: '#PK = :pk AND #SK BETWEEN :sk1 AND :sk2',
-      ExpressionAttributeNames: {
-        '#PK': 'ClassType',
-        '#SK': 'SortKey',
-      },
-      ExpressionAttributeValues: {
-        ':pk': classType,
-        ':sk1': sortKeyStart,
-        ':sk2': sotrKeyEnd,
-      }
-    }).promise();
+    const res = await searchDynamoDB({
+      condition: '#PK = :pk AND #SK BETWEEN :sk1 AND :sk2',
+      paramLabel: { '#PK': 'ClassType', '#SK': 'SortKey', },
+      paramValue: { ':pk': classType, ':sk1': sortKeyStart, ':sk2': sotrKeyEnd, },
+    });
     appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchExecutions-RESULT-${JSON.stringify({ res })}`);
     return {
       count: res.Count,
-      result: res.Items as ExecutionDynamoDB[],
+      result: res.Items as ExecutionDynamoDB[] | undefined,
     };
   } catch (err) {
     await handleError(__filename, 'searchExecutions', 'code', 'DBの検索に失敗。', { productId, sortKeyStart, sotrKeyEnd, }, err);

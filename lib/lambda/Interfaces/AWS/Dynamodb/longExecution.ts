@@ -3,7 +3,7 @@ import { processEnv } from "../../../Common/processEnv";
 import handleError from "../../../HandleError/handleError";
 import { ProductId } from "../../../Main/productSettings";
 import { ExecutionAggregated } from "../../DomainType";
-import { db } from "./db";
+import { db, putDynamoDB, searchDynamoDB } from "./db";
 
 const suffixLongExecution = 'LONG_EXEC';
 
@@ -17,14 +17,7 @@ export const setLongExecution = async (productId: ProductId, sortKey: string, da
   appLogger.info(`▲▲${productId}-AWS-DynamoDB-setLongExecution-CALL-${JSON.stringify({ classType, sortKey, data })}`);
 
   try {
-    await db.put({
-      TableName: processEnv.TableName,
-      Item: {
-        ClassType: classType,
-        SortKey: sortKey,
-        data: data,
-      }
-    }).promise();
+    await putDynamoDB({ ClassType: classType, SortKey: sortKey, data: data, });
   } catch (err) {
     await handleError(__filename, 'setLongExecution', 'code', 'DBの保存に失敗。', { productId, sortKey, data, }, err);
   }
@@ -49,19 +42,11 @@ export const searchLongExecutions = async (productId: ProductId, sortKeyStart: s
   appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchLongExecutions-CALL-${JSON.stringify({ classType, sortKeyStart, sotrKeyEnd })}`);
 
   try {
-    const res = await db.query({
-      TableName: processEnv.TableName,
-      KeyConditionExpression: '#PK = :pk AND #SK BETWEEN :sk1 AND :sk2',
-      ExpressionAttributeNames: {
-        '#PK': 'ClassType',
-        '#SK': 'SortKey',
-      },
-      ExpressionAttributeValues: {
-        ':pk': getLongExecutionClassType(productId),
-        ':sk1': sortKeyStart,
-        ':sk2': sotrKeyEnd,
-      }
-    }).promise();
+    const res = await searchDynamoDB({
+      condition: '#PK = :pk AND #SK BETWEEN :sk1 AND :sk2',
+      paramLabel: { '#PK': 'ClassType', '#SK': 'SortKey', },
+      paramValue: { ':pk': classType, ':sk1': sortKeyStart, ':sk2': sotrKeyEnd, },
+    });
     appLogger.info(`▲▲${productId}-AWS-DynamoDB-searchLongExecutions-RESULT-${JSON.stringify({ res })}`);
     return {
       count: res.Count,
