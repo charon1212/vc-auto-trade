@@ -74,7 +74,6 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
     // 損切りの判断をする。
     // 直近の約定価格が、買った時の値段の3%を下回っていたら、成行で売って損切に。
     if (judgeStopLoss(productSetting, productContext, shortAggregatedExecutions)) {
-      const targetOrder = orders.find((order) => (order.id === productContext.orderId));
       const cancelResult = targetOrder && await cancelOrder(productSetting, targetOrder);
       const size = (targetOrder?.main.size || 0) / productSetting.orderUnit;
       if (cancelResult) {
