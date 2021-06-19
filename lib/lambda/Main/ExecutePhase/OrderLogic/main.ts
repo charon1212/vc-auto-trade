@@ -27,6 +27,8 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
   const { shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, } = input;
   const productContext = await getProductContext(productSetting.id);
 
+  appLogger.debug(`****${JSON.stringify({ productContext })}`);
+
   if (!productContext) return [];
 
   /** ■■ 発注後の場合、注文の状態を確認して状態遷移する ■■ */
@@ -79,7 +81,8 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
     // 損切りの判断をする。
     // 直近の約定価格が、買った時の値段の3%を下回っていたら、成行で売って損切に。
     if (judgeStopLoss(productSetting, productContext, shortAggregatedExecutions)) {
-      const targetOrder = orders.find((order) => { order.id === productContext.orderId });
+      const targetOrder = orders.find((order) => (order.id === productContext.orderId));
+      appLogger.debug(`****debug****${JSON.stringify({ orders, productContext, targetOrder })}`);
       const cancelResult = targetOrder && await cancelOrder(productSetting, targetOrder);
       if (cancelResult) await sendStopLossOrder(productSetting, balanceVirtual.available, async (sellOrder) => { // 損切注文を発注できた場合
         newOrders.push(sellOrder);
@@ -175,7 +178,7 @@ const judgeStopLoss = (productSetting: ProductSetting, context: VCATProductConte
 
   const latestExecutionAggregated = getLatestExecution(shortAggregatedExecutions);
   const result = Boolean(latestExecutionAggregated && context.buyOrderPrice && latestExecutionAggregated.price < context.buyOrderPrice * 0.97);
-  appLogger.info1(`〇〇〇${productSetting.id}-Judge-StopLoss-${JSON.stringify({ latestExecutionAggregated, context, })}`);
+  appLogger.info1(`〇〇〇${productSetting.id}-Judge-StopLoss-${JSON.stringify({ result, latestExecutionAggregated, context, })}`);
   return result
 
 };
