@@ -27,8 +27,6 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
   const { shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, } = input;
   const productContext = await getProductContext(productSetting.id);
 
-  appLogger.debug(`****${JSON.stringify({ productContext })}`);
-
   if (!productContext) return [];
 
   /** ■■ 発注後の場合、注文の状態を確認して状態遷移する ■■ */
@@ -84,7 +82,8 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
       const targetOrder = orders.find((order) => (order.id === productContext.orderId));
       appLogger.debug(`****debug****${JSON.stringify({ orders, productContext, targetOrder })}`);
       const cancelResult = targetOrder && await cancelOrder(productSetting, targetOrder);
-      if (cancelResult) await sendStopLossOrder(productSetting, balanceVirtual.available, async (sellOrder) => { // 損切注文を発注できた場合
+      const size = (targetOrder?.main.size || 0) / productSetting.orderUnit;
+      if (cancelResult) await sendStopLossOrder(productSetting, size, async (sellOrder) => { // 損切注文を発注できた場合
         newOrders.push(sellOrder);
         productContext.orderPhase = 'StopLoss';
         appLogger.info1(`〇〇〇${productSetting.id}-ChangePhase-Sell→StopLoss`);
@@ -126,8 +125,7 @@ const sendSellOrder = async (productSetting: ProductSetting, availableBalanceVir
   if (sellOrder) await onSuccess(sellOrder);
 };
 
-const sendStopLossOrder = async (productSetting: ProductSetting, availableBalanceVirtual: number, onSuccess: (order: SimpleOrder) => void | Promise<void>) => {
-  const size = Math.floor(availableBalanceVirtual / productSetting.orderUnit); // 売れるだけ売る
+const sendStopLossOrder = async (productSetting: ProductSetting, size: number, onSuccess: (order: SimpleOrder) => void | Promise<void>) => {
   const sellOrder = await sendOrder(productSetting, 'MARKET', 'SELL', size,);
   if (sellOrder) await onSuccess(sellOrder);
 };
