@@ -32,19 +32,22 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
     await handleError(__filename, 'main', 'code', 'コンテキストが見つかりませんでした。', { input });
     return [];
   }
-
-  const targetOrder = (productContext.orderId !== undefined) && orders.find((order) => (order.id === productContext.orderId));
-
+  const targetOrder = orders.find((order) => (order.id === productContext.orderId));
+  if (productContext.afterSendOrder && !targetOrder) {
+    await handleError(__filename, 'main', 'code', '発注中の注文情報が見つかりませんでした。', { input });
+    return [];
+  }
   const orderStateController = new OrderStateController(productSetting, productContext);
 
+  appLogger.info1(`〇〇〇${productSetting.id}-StartMain-${JSON.stringify({ productContext, targetOrder, })}`);
+
   /** ■■ 発注後の場合、注文の状態を確認して状態遷移する ■■ */
-  if (productContext.afterSendOrder) {
-    await judgeOrderSuccess(productSetting, productContext.orderId!, orders,
-      async (order) => { // 成功したため、次のフェーズに遷移
-        orderStateController.onOrderSuccess(order.main.averagePrice);
-      }, async (order) => { // 失敗したため、再度発注状態に戻る
-        orderStateController.onOrderFailed();
-      });
+  if (productContext.afterSendOrder && targetOrder) {
+    if (targetOrder.state === 'COMPLETED') {// 注文に失敗した場合
+      orderStateController.onOrderSuccess(targetOrder.main.averagePrice);
+    } else if (targetOrder.state === 'INVALID') { // 注文に成功した場合
+      orderStateController.onOrderFailed();
+    }
   }
 
   /** ■■ フェーズごとの処理 ■■ */
@@ -72,7 +75,6 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
     // 直近の約定価格が、買った時の値段の3%を下回っていたら、成行で売って損切に。
     if (judgeStopLoss(productSetting, productContext, shortAggregatedExecutions)) {
       const targetOrder = orders.find((order) => (order.id === productContext.orderId));
-      appLogger.debug(`****debug****${JSON.stringify({ orders, productContext, targetOrder })}`);
       const cancelResult = targetOrder && await cancelOrder(productSetting, targetOrder);
       const size = (targetOrder?.main.size || 0) / productSetting.orderUnit;
       if (cancelResult) {
@@ -100,7 +102,7 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
 const sendBuyOrder = async (productSetting: ProductSetting, onSuccess: (order: SimpleOrder) => void | Promise<void>) => {
   const sizeByUnit = 5;
   const buyOrder = await sendOrder(productSetting, 'MARKET', 'BUY', sizeByUnit);
-  if (buyOrder) await onSuccess(buyOrder);
+  buyOrder ? (await onSuccess(buyOrder)) : (await handleError(__filename, 'sendBuyOrder', 'code', '発注に失敗しました。', { productSetting }));
 };
 
 /**
@@ -110,12 +112,13 @@ const sendSellOrder = async (productSetting: ProductSetting, availableBalanceVir
   const size = Math.floor(availableBalanceVirtual / productSetting.orderUnit); // 売れるだけ売る
   const price = moveUp(buyPrice * 1.005, 0, 'floor'); // 整数に四捨五入する。
   const sellOrder = await sendOrder(productSetting, 'LIMIT', 'SELL', size, price);
+  sellOrder ? (await onSuccess(sellOrder)) : (await handleError(__filename, 'sendSellOrder', 'code', '発注に失敗しました。', { productSetting, availableBalanceVirtual, buyPrice, }));
   if (sellOrder) await onSuccess(sellOrder);
 };
 
 const sendStopLossOrder = async (productSetting: ProductSetting, size: number, onSuccess: (order: SimpleOrder) => void | Promise<void>) => {
   const sellOrder = await sendOrder(productSetting, 'MARKET', 'SELL', size,);
-  if (sellOrder) await onSuccess(sellOrder);
+  sellOrder ? (await onSuccess(sellOrder)) : (await handleError(__filename, 'sendStopLossOrder', 'code', '発注に失敗しました。', { productSetting, size, }));
 };
 
 const canMakeNewOrder = (context: VCATProductContext) => {
@@ -127,44 +130,9 @@ const canMakeNewOrder = (context: VCATProductContext) => {
   return true;
 };
 
-const getNextOrderPhase = (phase?: OrderPhase): OrderPhase | undefined => {
-  if (phase === 'Buy') return 'Sell';
-  if (phase === 'Sell') return 'Buy';
-  if (phase === 'StopLoss') return 'Wait';
-  if (phase === 'Wait') return 'Buy';
-  return undefined;
-}
-
-/**
- * 注文一覧の中から指定した受付IDの注文を見つける。
- * その注文が、COMPLETEDなら、onSuccessを実行する。
- * その注文が、CANCELED, EXPIRED, REJECTEDなら、onFailを実行する。
- * @param orderId 対象注文の受付ID
- * @param orderList 入力フェーズで取得した注文のリスト
- * @param onSuccess 完了した時の注文に対する処理
- * @param onFail 失敗(キャンセル、期限切れ、Rejected)した時の注文に対する処理
- */
-const judgeOrderSuccess = async (productSetting: ProductSetting, orderId: string, orderList: SimpleOrder[], onSuccess: (order: SimpleOrder) => Promise<void>, onFail: (order: SimpleOrder) => Promise<void>) => {
-
-  const targetOrder = orderList.find((order) => (order.id === orderId));
-  if (!targetOrder) {
-    await handleError(__filename, 'judgeOrderSuccess', 'code', '注文待機中に、対象の注文が見つかりませんでした。', { acceptanceId: orderId, orderList, });
-    return;
-  }
-  appLogger.info1(`〇〇〇${productSetting.id}-TargetOrder-${JSON.stringify({ targetOrder })}`);
-  if (targetOrder.state === 'INVALID') {// 注文に失敗した場合
-    await onFail(targetOrder);
-  } else if (targetOrder.state === 'COMPLETED') { // 注文に成功した場合
-    await onSuccess(targetOrder);
-  }
-
-};
-
 const judgeStopLoss = (productSetting: ProductSetting, context: VCATProductContext, shortAggregatedExecutions: ExecutionAggregated[],) => {
-
   const latestExecutionAggregated = getLatestExecution(shortAggregatedExecutions);
   const result = Boolean(latestExecutionAggregated && context.buyOrderPrice && latestExecutionAggregated.price < context.buyOrderPrice * 0.97);
   appLogger.info1(`〇〇〇${productSetting.id}-Judge-StopLoss-${JSON.stringify({ result, latestExecutionAggregated, context, })}`);
-  return result
-
+  return result;
 };
