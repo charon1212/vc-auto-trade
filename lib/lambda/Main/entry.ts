@@ -11,6 +11,7 @@ import { getExecutions } from "./InputPhase/getExecutions";
 import { getLongAggregatedExecutions } from "./InputPhase/getLongAggregatedExecutions";
 import { getOrders } from "./InputPhase/getOrders";
 import { getShortAggregatedExecutions } from "./InputPhase/getShortAggregatedExecutions";
+import { LambdaExecutionChecker } from "./LambdaExecutionChecker";
 import { ProductSetting, productSettings } from "./productSettings";
 import { StandardTime } from "./StandardTime";
 
@@ -29,6 +30,8 @@ export const entry = async () => {
 
 };
 
+export let lambdaExecutionChecker: LambdaExecutionChecker;
+
 /** プロダクトごとのエントリー */
 const productEntry = async (productSetting: ProductSetting) => {
 
@@ -36,6 +39,8 @@ const productEntry = async (productSetting: ProductSetting) => {
 
   // 基準時刻を作る。
   const std = new StandardTime(Date.now());
+  // 死活チェッカー
+  lambdaExecutionChecker = new LambdaExecutionChecker();
 
   appLogger.info1(`〇${productSetting.id}-EntryStart-${JSON.stringify({ std: std.getStd(), productContext, })}`);
 
@@ -84,6 +89,9 @@ const productEntry = async (productSetting: ProductSetting) => {
   appLogger.info3(`〇〇${productSetting.id}-PhaseOutput-End`);
 
   appLogger.info1(`〇${productSetting.id}-EntryEnd-${JSON.stringify({ std: std.getStd(), productContext, })}`);
+
+  lambdaExecutionChecker.executeLast();
+  await lambdaExecutionChecker.registerDb(productSetting);
 
 };
 

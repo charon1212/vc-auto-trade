@@ -5,6 +5,7 @@ import { Balance, ExecutionAggregated, OrderState, SimpleOrder, VCATProductConte
 import { cancelOrder, sendOrder } from "../../../Interfaces/ExchangeApi/order";
 import { sendSlackMessage } from "../../../Interfaces/Slack/sendSlackMessage";
 import { getProductContext } from "../../context";
+import { lambdaExecutionChecker } from "../../entry";
 import { ProductSetting } from "../../productSettings";
 import { judgeBuyTiming } from "./buyJudge";
 import { getLatestExecution } from "./judgeUtil";
@@ -90,6 +91,8 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
     }
   }
 
+  // 死活チェッカーに実行したことを知らせる。
+  lambdaExecutionChecker.executeMain();
   return newOrders;
 
 };

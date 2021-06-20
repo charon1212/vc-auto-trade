@@ -1,3 +1,4 @@
+import { LambdaExecutionLive } from "../../../Main/LambdaExecutionChecker";
 import { ExecutionAggregated, OrderState, SimpleOrder, VCATProductContext } from "../../DomainType";
 import { DbSetting } from "./db";
 
@@ -52,3 +53,13 @@ export const dbSettingOrder: DbSetting<SimpleOrder, SimpleOrderDb> = {
   encode: (order) => ({ ...order, orderDateTimestamp: order.orderDate.getTime(), }),
   decode: (order) => ({ ...order, orderDate: new Date(order.orderDateTimestamp) }),
 };
+
+/** ■■■■Lambda実行死活情報■■■■ */
+export const dbSettingLambdaExecutionLive: DbSetting<LambdaExecutionLive, LambdaExecutionLive> = {
+  id: 'lambdaExecutionLive',
+  classTypeSuffix: 'LAMBDA_LIVE',
+  sortKey: (item) => (item.timestamp.toString()),
+  encode: (item) => (item),
+  decode: (item) => (item),
+};
+
