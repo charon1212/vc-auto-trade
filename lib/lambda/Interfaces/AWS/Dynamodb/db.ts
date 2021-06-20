@@ -79,6 +79,19 @@ export const searchDynamoDbBetween = async <T, DbType>(productSetting: ProductSe
   });
 };
 
+export const searchDynamoDbLast = async <T, DbType>(productSetting: ProductSetting, dbSetting: DbSetting<T, DbType>,) => {
+  const classType = getClassType(productSetting, dbSetting);
+  appLogger.info3(`▲▲${productSetting.id}-AWS-DynamoDB-searchDynamoDbLast-${dbSetting.id}-CALL-${JSON.stringify({ classType, })}`);
+  return await searchDynamoDb(productSetting, dbSetting, {
+    TableName: processEnv.TableName,
+    Limit: 1,
+    ScanIndexForward: false,
+    KeyConditionExpression: '#PK = :pk',
+    ExpressionAttributeNames: { '#PK': 'ClassType', },
+    ExpressionAttributeValues: { ':pk': classType, },
+  });
+};
+
 const searchDynamoDb = async <T, DbType>(productSetting: ProductSetting, dbSetting: DbSetting<T, DbType>, queryParams: AWS.DynamoDB.DocumentClient.QueryInput) => {
   try {
     const res = await db.query(queryParams).promise();

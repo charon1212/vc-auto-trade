@@ -2,6 +2,7 @@ import * as cdk from '@aws-cdk/core';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as events from '@aws-cdk/aws-events';
 import * as targets from '@aws-cdk/aws-events-targets';
+import * as apiGateway from '@aws-cdk/aws-apigateway';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as dotenv from 'dotenv';
 import { AttributeType, Table } from '@aws-cdk/aws-dynamodb';
@@ -55,7 +56,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     skeyBitflyer: secretAccessKeyBitflyer,
     akeyGmo: accessKeyGmo,
     skeyGmo: secretAccessKeyGmo,
-    LogLevel: isProduction ? 'ERROR' : 'ERROR',
+    LogLevel: isProduction ? 'ERROR' : 'INFO1',
     slackBotToken,
     slackChannelInfo,
     slackChannelError,
@@ -102,12 +103,33 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       id: 'DevelopmentTestHandler' + env,
       codeDirPath: 'lib/lambda',
       handler: 'developmentTest.handler',
-      environment: {...lambdaEnvVariables, LogLevel: 'TRACE', },
+      environment: { ...lambdaEnvVariables, LogLevel: 'TRACE', },
       timeoutSecond: 60,
       memorySize: 1024,
       layersArn: layerArnList,
     });
     dynamoTable.grantFullAccess(funcDevelopmentTest);
+  }
+
+  /** ■■API。今のところ開発環境のみ。■■ */
+  if (!isProduction) {
+    const getLiveLambda = makeLambdaFunc({
+      scope,
+      id: 'getLiveLambda' + env,
+      codeDirPath: 'lib/lambda',
+      handler: 'Handler/ApiGateway/getLive.handler',
+      environment: { ...lambdaEnvVariables, },
+      timeoutSecond: 3,
+      layersArn: layerArnList,
+    });
+    dynamoTable.grantFullAccess(getLiveLambda);
+
+    const api = new apiGateway.RestApi(scope, 'vcatApiGateway', {
+      restApiName: 'VCAT API',
+    });
+    const rootResource = api.root.addResource('vcat').addResource('v1').addResource('{productId}');
+    const liveResource = rootResource.addResource('live');
+    liveResource.addMethod('GET', new apiGateway.LambdaIntegration(getLiveLambda));
   }
 
 };
