@@ -1,6 +1,5 @@
 import { appLogger } from "../../../Common/log";
-import { OrderPhase, VCATProductContext } from "../../../Interfaces/AWS/Dynamodb/context";
-import { SimpleOrder } from "../../../Interfaces/DomainType";
+import { OrderPhase, SimpleOrder, VCATProductContext } from "../../../Interfaces/DomainType";
 import { sendSlackMessage } from "../../../Interfaces/Slack/sendSlackMessage";
 import { ProductSetting } from "../../productSettings";
 

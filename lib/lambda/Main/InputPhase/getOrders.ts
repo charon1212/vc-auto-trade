@@ -1,8 +1,7 @@
-import { appLogger } from "../../Common/log";
 import { asyncExecution } from "../../Common/util";
-import { searchOrders } from "../../Interfaces/AWS/Dynamodb/order";
+import { searchDynamoDbStartsWith } from "../../Interfaces/AWS/Dynamodb/db";
+import { dbSettingOrder, getOrderStateCode } from "../../Interfaces/AWS/Dynamodb/dbSettings";
 import { SimpleOrder, OrderState } from "../../Interfaces/DomainType";
-import { getParentOrderDetail } from "../../Interfaces/ExchangeApi/Bitflyer/getParentOrderDetail";
 import { getAssociatedExecutions } from "../../Interfaces/ExchangeApi/getAssociatedExecutions";
 import { getOrders as getOrdersApi } from "../../Interfaces/ExchangeApi/order";
 import { ProductSetting } from "../productSettings";
@@ -12,8 +11,8 @@ export const getOrders = async (productSetting: ProductSetting,) => {
   // DynamoDBからオーダー一覧を取得する
   let activeOrderFromDb: SimpleOrder[] = [], unknownOrderFromDb: SimpleOrder[] = [];
   await asyncExecution(
-    async () => { unknownOrderFromDb = (await searchOrders(productSetting.id, 'UNKNOWN')).result?.map((item) => item.data) || [] },
-    async () => { activeOrderFromDb = (await searchOrders(productSetting.id, 'ACTIVE')).result?.map((item) => item.data) || [] },
+    async () => { unknownOrderFromDb = (await searchDynamoDbStartsWith(productSetting, dbSettingOrder, getOrderStateCode('UNKNOWN'))).items },
+    async () => { unknownOrderFromDb = (await searchDynamoDbStartsWith(productSetting, dbSettingOrder, getOrderStateCode('ACTIVE'))).items },
   );
 
   const orderListFromDb: SimpleOrder[] = [];

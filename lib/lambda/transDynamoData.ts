@@ -1,5 +1,7 @@
-import { deleteExecution, ExecutionDynamoDB, searchExecutions } from "./Interfaces/AWS/Dynamodb/execution";
+import { searchDynamoDbBetween } from "./Interfaces/AWS/Dynamodb/db";
+import { dbSettingExecution } from "./Interfaces/AWS/Dynamodb/dbSettings";
 import { writeTextFile } from "./Interfaces/AWS/S3/writeTextFile";
+import { ExecutionAggregated } from "./Interfaces/DomainType";
 import { ProductId, ProductSetting, productSettings } from "./Main/productSettings";
 
 /**
@@ -38,26 +40,16 @@ const exec = async (productSetting: ProductSetting, targetDate: Date) => {
   const startTimestamp = targetDate.getTime();
   const endTimestamp = startTimestamp + 24 * 60 * 60 * 1000 - 1;
 
-  const res = await searchExecutions(productSetting.id, startTimestamp.toString(), endTimestamp.toString());
+  const res = await searchDynamoDbBetween(productSetting, dbSettingExecution, startTimestamp.toString(), endTimestamp.toString());
 
   if (res?.count && res.count > 0) {
-    const csvBody = makeCsvBody(res.result || []);
+    const csvBody = makeCsvBody(res.items);
     const yearMonthStr = `${targetDate.getFullYear()}-${targetDate.getMonth() + 1}`;
     const yearMonthDayStr = yearMonthStr + `-${targetDate.getDate()}`;
     const csvFilePath = `EXEC_HISTORY_${productSetting.id}_${yearMonthStr}/data_${yearMonthDayStr}.csv`;
-
     await writeTextFile(csvFilePath, csvBody);
-
   }
 
-};
-
-const deleteAllExecution = async (productId: ProductId, list: ExecutionDynamoDB[]) => {
-  const promiseList: Promise<boolean>[] = [];
-  for (let item of list) {
-    promiseList.push(deleteExecution(productId, item.SortKey));
-  }
-  return Promise.all(promiseList);
 };
 
 /**
@@ -65,10 +57,11 @@ const deleteAllExecution = async (productId: ProductId, list: ExecutionDynamoDB[
  * @param list DynamoDBのデータ
  * @returns CSVファイルに出力する文字列
  */
-const makeCsvBody = (list: ExecutionDynamoDB[]) => {
+const makeCsvBody = (list: ExecutionAggregated[][]) => {
+  if (!list) return '';
   const body: string[] = [];
   for (let item of list) {
-    for (let item2 of item.ExecutionList) {
+    for (let item2 of item) {
       body.push(`"${item2.timestamp}","${item2.price}","${item2.totalSize}","${item2.buySize}","${item2.sellSize}"`);
     }
   }

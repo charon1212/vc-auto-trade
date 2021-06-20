@@ -1,9 +1,8 @@
 import { appLogger } from "../Common/log";
 import { asyncExecution } from "../Common/util";
 import handleError from "../HandleError/handleError";
-import { setExecution } from "../Interfaces/AWS/Dynamodb/execution";
-import { setLongExecution } from "../Interfaces/AWS/Dynamodb/longExecution";
-import { deleteOrder, setOrder } from "../Interfaces/AWS/Dynamodb/order";
+import { deleteDynamoDb, putDynamoDb } from "../Interfaces/AWS/Dynamodb/db";
+import { dbSettingExecution, dbSettingLongExecution, dbSettingOrder, getOrderSortKey } from "../Interfaces/AWS/Dynamodb/dbSettings";
 import { Balance, Execution, ExecutionAggregated, SimpleOrder, OrderState } from "../Interfaces/DomainType";
 import { getProductContext, importProductContextFromDb, saveProductContext } from "./context";
 import { execute } from "./ExecutePhase/execute";
@@ -12,7 +11,7 @@ import { getExecutions } from "./InputPhase/getExecutions";
 import { getLongAggregatedExecutions } from "./InputPhase/getLongAggregatedExecutions";
 import { getOrders } from "./InputPhase/getOrders";
 import { getShortAggregatedExecutions } from "./InputPhase/getShortAggregatedExecutions";
-import { ProductId, ProductSetting, productSettings } from "./productSettings";
+import { ProductSetting, productSettings } from "./productSettings";
 import { StandardTime } from "./StandardTime";
 
 export const entry = async () => {
@@ -51,8 +50,8 @@ const productEntry = async (productSetting: ProductSetting) => {
 
   await asyncExecution(
     async () => { executions = await getExecutions(productSetting, std.getStd()) },
-    async () => { shortAggregatedExecutions = await getShortAggregatedExecutions(productSetting.id, std.getStd()) },
-    async () => { longAggregatedExecutions = await getLongAggregatedExecutions(productSetting.id, std.getStd()) },
+    async () => { shortAggregatedExecutions = await getShortAggregatedExecutions(productSetting, std.getStd()) },
+    async () => { longAggregatedExecutions = await getLongAggregatedExecutions(productSetting, std.getStd()) },
     async () => { orders = await getOrders(productSetting) },
     async () => {
       const obj = await getBalances(productSetting.exchangeCode, productSetting.currencyCode.real, productSetting.currencyCode.virtual);
@@ -78,9 +77,9 @@ const productEntry = async (productSetting: ProductSetting) => {
   /** ■■ 保存フェーズ ■■ */
   appLogger.info3(`〇〇${productSetting.id}-PhaseOutput-Start`);
   await asyncExecution(
-    async () => { await setExecution(productSetting.id, std.getStdBefore1Min().toString(), newAggregatedExecutions1Min); },
-    async () => { if (newLongAggregatedExecution) { await setLongExecution(productSetting.id, std.getHourStdBefore1Hour().toString(), newLongAggregatedExecution) } },
-    ...(updatedOrder.map((orderInfo) => (async () => { await saveOrder(productSetting.id, orderInfo.order, orderInfo.beforeState) }))),
+    async () => { await putDynamoDb(productSetting, dbSettingExecution, newAggregatedExecutions1Min) },
+    async () => { if (newLongAggregatedExecution) { await putDynamoDb(productSetting, dbSettingLongExecution, newLongAggregatedExecution) } },
+    ...(updatedOrder.map((orderInfo) => (async () => { await saveOrder(productSetting, orderInfo.order, orderInfo.beforeState) }))),
   );
   appLogger.info3(`〇〇${productSetting.id}-PhaseOutput-End`);
 
@@ -88,12 +87,10 @@ const productEntry = async (productSetting: ProductSetting) => {
 
 };
 
-const saveOrder = async (productId: ProductId, order: SimpleOrder, beforeState?: OrderState) => {
-
+const saveOrder = async (productSetting: ProductSetting, order: SimpleOrder, beforeState?: OrderState) => {
   if (beforeState && order.state !== beforeState) {
     // 前のステートのオーダーを削除する。
-    await deleteOrder(productId, beforeState, order.id, order.orderDate);
+    await deleteDynamoDb(productSetting, dbSettingOrder, getOrderSortKey(order.state, order.id, order.orderDate));
   }
-  await setOrder(productId, order);
-
+  await putDynamoDb(productSetting, dbSettingOrder, order);
 };

@@ -58,3 +58,30 @@ export type Balance = {
   amount: number, // 総額
   available: number, // 利用可能額
 };
+
+/**
+ * プロダクトごとのコンテキスト情報。
+ * Lambda関数は1分ごとの実行でデータ共有が保証されないため、DynamoDBにコンテキスト情報として保存し、それを開始時に読み込むことで情報共有を行う。
+ * コンテキストは初回実行時など、何もない状態から始まることも想定されるため、全てのプロパティがundefinedになりうるとして設計すること。
+ */
+export type VCATProductContext = {
+  lastExecution?: {
+    id?: number,
+    timestamp?: number,
+  },
+  orderPhase?: OrderPhase,
+  afterSendOrder?: boolean,
+  orderId?: string,
+  buyOrderPrice?: number,
+  makeNewOrder?: boolean,
+  startBuyTimestamp?: number,
+};
+/**
+ * オーダー状態
+ * - Buy: 買い注文のタイミング待ち、または買い注文を出してから約定するまでの間
+ * - Sell: 売り注文のタイミング待ち、または売り注文を出してから約定するまでの間
+ * - StopLoss: 損切判断後、損切の注文が約定するまでの間
+ * - WaitAfterStopLoss: 損切後の一時待機期間
+ * - Wait: 注文を一切行わない待機期間
+ */
+export type OrderPhase = 'Buy' | 'Sell' | 'StopLoss' | 'Wait';
