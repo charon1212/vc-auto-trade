@@ -10,14 +10,14 @@ import { getOrders as getGmoOrders, OrderStatusGMO } from './GMO/getOrders';
 import { sendOrder as sendGmoOrder } from './GMO/sendOrder';
 
 export const getOrders = async (productSetting: ProductSetting, orders: SimpleOrder[]) => {
-  appLogger.info2(`★★${productSetting.id}-API-getAllOrders-CALL`);
+  appLogger.info2(`★★${productSetting.id}-API-getOrders-CALL-${JSON.stringify({ orders, })}`);
   let newOrders: SimpleOrder[] = [];
   if (productSetting.exchangeCode === 'Bitflyer') {
     newOrders = await getOrdersBitflyer(productSetting, orders);
   } else if (productSetting.exchangeCode === 'GMO') {
     newOrders = await getOrdersGmo(orders);
   }
-  appLogger.info2(`★★${productSetting.id}-API-getAllOrders-RESULT-${JSON.stringify({ newOrders })}`);
+  appLogger.info2(`★★${productSetting.id}-API-getOrders-RESULT-${JSON.stringify({ newOrders })}`);
   return newOrders;
 };
 
