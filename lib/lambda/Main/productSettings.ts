@@ -38,7 +38,10 @@ const productSettingsProd: ProductSetting[] = [
   },
 ];
 
-const productSettingsDev: ProductSetting[] = productSettingsProd.map((productSettings) => productSettings);
+const productSettingsDev: ProductSetting[] = productSettingsProd.map((productSetting) => ({
+  ...productSetting,
+  executeOrderPhase: (productSetting.id === 'GMO-BTC') // GMO-BTCのみ、注文処理を実施。
+}));
 
 export const productSettings: ProductSetting[] = processEnv.EnvName === 'production' ? productSettingsProd : productSettingsDev;
 
