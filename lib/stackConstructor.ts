@@ -123,6 +123,16 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       layersArn: layerArnList,
     });
     dynamoTable.grantFullAccess(getLiveLambda);
+    const getContextLambda = makeLambdaFunc({
+      scope,
+      id: 'getContextLambda' + env,
+      codeDirPath: 'lib/lambda',
+      handler: 'Handler/ApiGateway/getContext.handler',
+      environment: { ...lambdaEnvVariables, },
+      timeoutSecond: 3,
+      layersArn: layerArnList,
+    });
+    dynamoTable.grantFullAccess(getContextLambda);
 
     const api = new apiGateway.RestApi(scope, 'vcatApiGateway', {
       restApiName: 'VCAT API',
@@ -130,6 +140,8 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     const rootResource = api.root.addResource('vcat').addResource('v1').addResource('{productId}');
     const liveResource = rootResource.addResource('live');
     liveResource.addMethod('GET', new apiGateway.LambdaIntegration(getLiveLambda));
+    const contextResource = rootResource.addResource('context');
+    contextResource.addMethod('GET', new apiGateway.LambdaIntegration(getContextLambda));
   }
 
 };
