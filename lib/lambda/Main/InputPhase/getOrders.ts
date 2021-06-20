@@ -12,7 +12,7 @@ export const getOrders = async (productSetting: ProductSetting,) => {
   let activeOrderFromDb: SimpleOrder[] = [], unknownOrderFromDb: SimpleOrder[] = [];
   await asyncExecution(
     async () => { unknownOrderFromDb = (await searchDynamoDbStartsWith(productSetting, dbSettingOrder, getOrderStateCode('UNKNOWN'))).items },
-    async () => { unknownOrderFromDb = (await searchDynamoDbStartsWith(productSetting, dbSettingOrder, getOrderStateCode('ACTIVE'))).items },
+    async () => { activeOrderFromDb = (await searchDynamoDbStartsWith(productSetting, dbSettingOrder, getOrderStateCode('ACTIVE'))).items },
   );
 
   const orderListFromDb: SimpleOrder[] = [];
