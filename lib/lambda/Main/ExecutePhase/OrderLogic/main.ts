@@ -29,12 +29,12 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
 
   const productContext = await getProductContext(productSetting.id);
   if (!productContext) {
-    await handleError(__filename, 'main', 'code', 'コンテキストが見つかりませんでした。', { input });
+    await handleError(__filename, 'main', 'code', 'コンテキストが見つかりませんでした。', { productSetting });
     return [];
   }
   const targetOrder = orders.find((order) => (order.id === productContext.orderId));
   if (productContext.afterSendOrder && !targetOrder) {
-    await handleError(__filename, 'main', 'code', '発注中の注文情報が見つかりませんでした。', { input });
+    await handleError(__filename, 'main', 'code', '発注中の注文情報が見つかりませんでした。', { productContext, orders });
     return [];
   }
   const orderStateController = new OrderStateController(productSetting, productContext);
@@ -114,7 +114,6 @@ const sendSellOrder = async (productSetting: ProductSetting, availableBalanceVir
   const price = moveUp(buyPrice * 1.005, 0, 'floor'); // 整数に四捨五入する。
   const sellOrder = await sendOrder(productSetting, 'LIMIT', 'SELL', size, price);
   sellOrder ? (await onSuccess(sellOrder)) : (await handleError(__filename, 'sendSellOrder', 'code', '発注に失敗しました。', { productSetting, availableBalanceVirtual, buyPrice, }));
-  if (sellOrder) await onSuccess(sellOrder);
 };
 
 const sendStopLossOrder = async (productSetting: ProductSetting, size: number, onSuccess: (order: SimpleOrder) => void | Promise<void>) => {
