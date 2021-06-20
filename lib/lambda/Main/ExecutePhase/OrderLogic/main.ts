@@ -1,9 +1,8 @@
 import { appLogger } from "../../../Common/log";
 import { moveUp } from "../../../Common/util";
 import handleError from "../../../HandleError/handleError";
-import { Balance, ExecutionAggregated, OrderState, SimpleOrder, VCATProductContext } from "../../../Interfaces/DomainType";
+import { Balance, ExecutionAggregated, SimpleOrder, VCATProductContext } from "../../../Interfaces/DomainType";
 import { cancelOrder, sendOrder } from "../../../Interfaces/ExchangeApi/order";
-import { sendSlackMessage } from "../../../Interfaces/Slack/sendSlackMessage";
 import { getProductContext } from "../../context";
 import { lambdaExecutionChecker } from "../../entry";
 import { ProductSetting } from "../../productSettings";
