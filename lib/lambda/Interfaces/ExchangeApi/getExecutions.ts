@@ -1,4 +1,5 @@
 import { appLogger } from "../../Common/log";
+import { executeAsyncInMilliseconds } from "../../Common/util";
 import { ProductSetting } from "../../Main/productSettings";
 import { Execution } from "../DomainType";
 import { ExecutionBitflyer, getExecutions as getBitflyerExecutions } from "./Bitflyer/getExecutions";
@@ -29,8 +30,9 @@ export const getExecutions = async (timestamp: number, productSetting: ProductSe
 const getExecutionsGmo = async (timestamp: number, productSetting: ProductSetting) => {
 
   const executionList: TradeGMO[] = [];
-  for (let page = 1; page < 5; page++) {
-    const res = await getTrades(productSetting.productCode, page);
+  for (let page = 1; page < 6; page++) {
+    // GMOのgetTradesは秒間2～3回に制限をかけているらしいので、0.5秒に1回の頻度に調整する。
+    const res = await executeAsyncInMilliseconds(async () => { return await getTrades(productSetting.productCode, page) }, 500);
     if (res.length === 0) break;
     if (res[res.length - 1].timestamp.getTime() < timestamp) {
       executionList.push(...(res.filter((trade) => (trade.timestamp.getTime() >= timestamp)))); // 開始時刻timestamp以降のデータのみ追加

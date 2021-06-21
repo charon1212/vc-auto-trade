@@ -78,3 +78,22 @@ export const moveUp = (value: number, digits: number, operation: 'floor' | 'roun
   }
 
 };
+
+export const sleep = (milliseconds: number) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => { resolve(undefined); }, milliseconds);
+  });
+}
+
+/**
+ * 特定の非同期関数を、指定のミリ秒かけて実行する。
+ * 実行時間が指定したミリ秒を超えている場合は、実行が完了した後そのままリターンする。
+ * 実行時間が指定したミリ秒未満の場合は、ミリ秒経過するまで待機する。
+ * @param executor 実行したい非同期処理
+ * @param milliseconds 待機する時間
+ * @returns 実行結果
+ */
+export const executeAsyncInMilliseconds = async <T>(executor: () => Promise<T>, milliseconds: number,): Promise<T> => {
+  const result = await Promise.all([executor(), sleep(milliseconds)]);
+  return result[0];
+};
