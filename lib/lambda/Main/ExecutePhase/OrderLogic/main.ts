@@ -76,6 +76,7 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
       const cancelResult = targetOrder && await cancelOrder(productSetting, targetOrder);
       const size = (targetOrder?.main.size || 0) / productSetting.orderUnit;
       if (cancelResult) {
+        if (targetOrder) targetOrder.state = 'INVALID';
         await sendStopLossOrder(productSetting, size, async (sellOrder) => { // 損切注文を発注できた場合
           newOrders.push(sellOrder);
           orderStateController.onStopLoss(sellOrder, 60 * 60 * 1000);
