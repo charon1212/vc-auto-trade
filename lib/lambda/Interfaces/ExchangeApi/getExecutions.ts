@@ -14,7 +14,7 @@ import { getTrades, TradeGMO } from "./GMO/getTrades";
  */
 export const getExecutions = async (timestamp: number, productSetting: ProductSetting, lastExecutionId?: number) => {
 
-  appLogger.info2(`★★${productSetting.id}-API-getExecutions-CALL-${JSON.stringify({ timestamp, productSetting, lastExecutionId })}`);
+  appLogger.info1(`★★${productSetting.id}-API-getExecutions-CALL-${JSON.stringify({ timestamp, productSetting, lastExecutionId })}`);
   let result: Execution[] = [];
   if (productSetting.exchangeCode === 'Bitflyer') {
     result = await getExecutionsBitflyer(timestamp, productSetting, lastExecutionId);

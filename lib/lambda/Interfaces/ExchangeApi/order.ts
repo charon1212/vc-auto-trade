@@ -10,14 +10,14 @@ import { getOrders as getGmoOrders, OrderStatusGMO } from './GMO/getOrders';
 import { sendOrder as sendGmoOrder } from './GMO/sendOrder';
 
 export const getOrders = async (productSetting: ProductSetting, orders: SimpleOrder[]) => {
-  appLogger.info2(`★★${productSetting.id}-API-getOrders-CALL-${JSON.stringify({ orders, })}`);
+  appLogger.info1(`★★${productSetting.id}-API-getOrders-CALL-${JSON.stringify({ orders, })}`);
   let newOrders: SimpleOrder[] = [];
   if (productSetting.exchangeCode === 'Bitflyer') {
     newOrders = await getOrdersBitflyer(productSetting, orders);
   } else if (productSetting.exchangeCode === 'GMO') {
     newOrders = await getOrdersGmo(orders);
   }
-  appLogger.info2(`★★${productSetting.id}-API-getOrders-RESULT-${JSON.stringify({ newOrders })}`);
+  appLogger.info1(`★★${productSetting.id}-API-getOrders-RESULT-${JSON.stringify({ newOrders })}`);
   return newOrders;
 };
 
@@ -81,18 +81,18 @@ const convertGmoOrderState = (state: OrderStatusGMO): OrderState => {
 
 export const sendOrder = async (productSetting: ProductSetting, orderType: 'LIMIT' | 'MARKET', side: 'BUY' | 'SELL', sizeUnit: number, price?: number) => {
 
-  appLogger.info2(`★★${productSetting.id}-API-sendOrder-CALL-${JSON.stringify({ productSetting, orderType, side, sizeUnit, price, })}`);
+  appLogger.info1(`★★${productSetting.id}-API-sendOrder-CALL-${JSON.stringify({ productSetting, orderType, side, sizeUnit, price, })}`);
   let order: SimpleOrder | undefined = undefined;
   if (productSetting.exchangeCode === 'Bitflyer') {
     order = await sendOrderBitflyer(productSetting, orderType, side, sizeUnit, price,);
   } else if (productSetting.exchangeCode === 'GMO') {
     order = await sendOrderGmo(productSetting, orderType, side, sizeUnit, price,);
   }
-  appLogger.info2(`★★${productSetting.id}-API-sendOrder-RESULT-${JSON.stringify({ order, })}`);
+  appLogger.info1(`★★${productSetting.id}-API-sendOrder-RESULT-${JSON.stringify({ order, })}`);
   return order;
 };
 
-export const sendOrderBitflyer = async (productSetting: ProductSetting, orderType: 'LIMIT' | 'MARKET', side: 'BUY' | 'SELL', sizeUnit: number, price?: number) => {
+const sendOrderBitflyer = async (productSetting: ProductSetting, orderType: 'LIMIT' | 'MARKET', side: 'BUY' | 'SELL', sizeUnit: number, price?: number) => {
   const size = getOrderSize(productSetting, sizeUnit);
   if (!size) return undefined;
 
@@ -117,7 +117,7 @@ export const sendOrderBitflyer = async (productSetting: ProductSetting, orderTyp
   return order;
 };
 
-export const sendOrderGmo = async (productSetting: ProductSetting, orderType: 'LIMIT' | 'MARKET', side: 'BUY' | 'SELL', sizeUnit: number, price?: number) => {
+const sendOrderGmo = async (productSetting: ProductSetting, orderType: 'LIMIT' | 'MARKET', side: 'BUY' | 'SELL', sizeUnit: number, price?: number) => {
   const size = getOrderSize(productSetting, sizeUnit);
   if (!size) return undefined;
 
@@ -146,14 +146,14 @@ export const sendOrderGmo = async (productSetting: ProductSetting, orderType: 'L
 
 export const cancelOrder = async (productSetting: ProductSetting, order: SimpleOrder) => {
 
-  appLogger.info2(`★★${productSetting.id}-API-cancelOrder-CALL-${JSON.stringify({ productSetting, order, })}`);
+  appLogger.info1(`★★${productSetting.id}-API-cancelOrder-CALL-${JSON.stringify({ productSetting, order, })}`);
   let result: boolean = false;
   if (productSetting.exchangeCode === 'Bitflyer') {
     result = await cancelBitflyerOrder(productSetting.productCode, { child_order_acceptance_id: order.idBitflyer?.acceptanceId });
   } else if (productSetting.exchangeCode === 'GMO') {
     result = await cancelGmoOrder(order.idGmo!); // GMOの注文であれば、idGmoは必須…のはず。
   }
-  appLogger.info2(`★★${productSetting.id}-API-cancelOrder-RESULT-${JSON.stringify({ result, })}`);
+  appLogger.info1(`★★${productSetting.id}-API-cancelOrder-RESULT-${JSON.stringify({ result, })}`);
   return result;
 
 };
@@ -165,7 +165,7 @@ export const cancelOrder = async (productSetting: ProductSetting, order: SimpleO
  * @param sizeByUnit 最小単位を単位とした注文数量。正の整数で指定する。
  * @returns 最小単位の整数倍で表した注文数量。
  */
-export const getOrderSize = (productSetting: ProductSetting, sizeByUnit: number) => {
+const getOrderSize = (productSetting: ProductSetting, sizeByUnit: number) => {
 
   // 丸目誤差の影響で端数が残ることがあり、端数が残るとBitflyerAPIにはじかれる。それを直すため、10桁目で四捨五入する。
   const base = 1e9;

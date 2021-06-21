@@ -10,14 +10,14 @@ import { getAssets } from './GMO/getAssets';
  */
 export const getBalances = async (exchangeCode: ExchangeCode): Promise<Balance[]> => {
 
-  appLogger.info2(`★★API-getBalances-CALL`);
+  appLogger.info1(`★★API-getBalances-CALL`);
   let result: Balance[] = [];
   if (exchangeCode === 'Bitflyer') {
     result = await getBalancesBitflyer();
   } else if (exchangeCode === 'GMO') {
     result = await getBalancesGmo();
   }
-  appLogger.info2(`★★API-getBalances-RESULT-${JSON.stringify({ result })}`);
+  appLogger.info1(`★★API-getBalances-RESULT-${JSON.stringify({ result })}`);
   return result;
 
 };
