@@ -1,6 +1,7 @@
-import { Execution, SimpleOrder } from "../../Interfaces/DomainType";
+import handleError from "../../HandleError/handleError";
+import { Execution, SimpleOrder, VCATProductContext } from "../../Interfaces/DomainType";
 import { getProductContext } from "../context";
-import { ProductId } from "../productSettings";
+import { ProductId, ProductSetting, productSettings } from "../productSettings";
 import { StandardTime } from "../StandardTime";
 import { aggregateExecution } from "./aggregateExecution";
 import { ExecutePhaseFunction } from "./interface";
@@ -15,8 +16,10 @@ export const execute: ExecutePhaseFunction = async (input) => {
   const { newShortAggregatedExecutions, newLongAggregatedExecution } =
     await aggregateExecution(executions, shortAggregatedExecutions, longAggregatedExecutions, std);
 
+  const existOutManageOrder = checkExistOutManageOrder(orders.map((item) => item.order), productSetting);
+
   let newOrders: SimpleOrder[] = [];
-  if (productSetting.executeOrderPhase) {
+  if (productSetting.executeOrderPhase && !existOutManageOrder) {
     newOrders = await main({
       shortAggregatedExecutions: [...shortAggregatedExecutions, ...newShortAggregatedExecutions],
       longAggregatedExecutions,
@@ -53,4 +56,19 @@ const updateLastExecutionId = async (productId: ProductId, executions: Execution
     }
   }
 
+};
+
+/**
+ * 余計な注文情報が紛れていないか確認する。
+ */
+const checkExistOutManageOrder = async (orders: SimpleOrder[], setting: ProductSetting) => {
+  const context = await getProductContext(setting.id);
+  let exist = false;
+  for (let order of orders) {
+    if (order.id !== context?.orderId) {
+      await handleError(__filename, 'existOutManageOrder', 'code', `追跡できない注文情報(ID=${order.id})が見つかりました。`, { orders, setting },);
+      exist = true;
+    }
+  }
+  return exist;
 };
