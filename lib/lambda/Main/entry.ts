@@ -98,7 +98,7 @@ const productEntry = async (productSetting: ProductSetting) => {
 const saveOrder = async (productSetting: ProductSetting, order: SimpleOrder, beforeState?: OrderState) => {
   if (beforeState && order.state !== beforeState) {
     // 前のステートのオーダーを削除する。
-    await deleteDynamoDb(productSetting, dbSettingOrder, getOrderSortKey(order.state, order.id, order.orderDate));
+    await deleteDynamoDb(productSetting, dbSettingOrder, getOrderSortKey(beforeState, order.id, order.orderDate));
   }
   await putDynamoDb(productSetting, dbSettingOrder, order);
 };

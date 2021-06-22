@@ -16,7 +16,7 @@ export const execute: ExecutePhaseFunction = async (input) => {
   const { newShortAggregatedExecutions, newLongAggregatedExecution } =
     await aggregateExecution(executions, shortAggregatedExecutions, longAggregatedExecutions, std);
 
-  const existOutManageOrder = checkExistOutManageOrder(orders.map((item) => item.order), productSetting);
+  const existOutManageOrder = await checkExistOutManageOrder(orders.map((item) => item.order), productSetting);
 
   let newOrders: SimpleOrder[] = [];
   if (productSetting.executeOrderPhase && !existOutManageOrder) {
@@ -65,7 +65,8 @@ const checkExistOutManageOrder = async (orders: SimpleOrder[], setting: ProductS
   const context = await getProductContext(setting.id);
   let exist = false;
   for (let order of orders) {
-    if (order.id !== context?.orderId) {
+    // まだ有効な注文なのに、オーダーIDがコンテキストと異なる場合はエラーとして管理。
+    if (order.id !== context?.orderId && (order.state === 'ACTIVE' || order.state === 'UNKNOWN')) {
       await handleError(__filename, 'existOutManageOrder', 'code', `追跡できない注文情報(ID=${order.id})が見つかりました。`, { orders, setting },);
       exist = true;
     }
