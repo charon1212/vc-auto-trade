@@ -55,9 +55,26 @@ export const isAllInteger = (...values: (number | undefined)[]) => {
   return true;
 }
 
+/**
+ * 引数に指定したすべての非同期関数を並列実行する。
+ * @param executions 非同期関数。可変長。
+ * @returns 並列実行したPromiseオブジェクト。
+ */
 export const asyncExecution = async (...executions: (() => Promise<void>)[]) => {
   const promiseList: Promise<void>[] = [];
   for (let execution of executions) promiseList.push(execution());
+  return await Promise.all(promiseList);
+};
+
+/**
+ * arrayのすべての要素に対して、executionを並列実行する。
+ * @param array 引数の配列。
+ * @param execution 並列実行する関数。
+ * @returns 並列実行したPromiseオブジェクト。
+ */
+export const asyncExecutionArray = async <T>(array: T[], execution: (arg: T) => Promise<void>) => {
+  const promiseList: Promise<void>[] = [];
+  for (let arg of array) promiseList.push(execution(arg));
   return await Promise.all(promiseList);
 };
 

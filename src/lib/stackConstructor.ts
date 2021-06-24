@@ -24,6 +24,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
   const isProduction = (env === '');
   const envName = isProduction ? 'production' : 'dev';
   const layerArnList = awsLayerArnList.split(',');
+  const codeDirPath = 'dist/lib/lambda';
 
   const slackChannelInfo = isProduction ? slackChannelProdInfo : slackChannelDevInfo;
   const slackChannelError = isProduction ? slackChannelProdError : slackChannelDevError;
@@ -66,7 +67,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
   const funcMain = makeLambdaFunc({
     scope,
     id: 'MainHandler' + env,
-    codeDirPath: 'dist/lib/lambda',
+    codeDirPath,
     handler: 'Handler/main.handler',
     environment: lambdaEnvVariables,
     timeoutSecond: isProduction ? 10 : 5,
@@ -82,7 +83,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
   const funcTransDynamoData = makeLambdaFunc({
     scope,
     id: 'TransDynamoDataHandler' + env,
-    codeDirPath: 'dist/lib/lambda',
+    codeDirPath,
     handler: 'Handler/Batch/transDynamoData.handler',
     environment: lambdaEnvVariables,
     timeoutSecond: 60,
@@ -96,12 +97,30 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
   s3Bucket.grantReadWrite(funcTransDynamoData as any); // なぜか型エラーが出て解決できない。。。苦肉のAs any。
   dynamoTable.grantReadData(funcTransDynamoData);
 
+  /** ■■
+   *       Lambda(汎用バッチ)
+   *       AWSコンソールの「Test」から実行することを想定し、コンテキストを変えたり状態を変えたりする。
+   *       将来的にはAPI & クライアントアプリケーションで変更する想定。
+   *  ■■ */
+  const funcUtilBatch = makeLambdaFunc({
+    scope,
+    id: 'UtilBatch' + env,
+    codeDirPath,
+    handler: 'Handler/Batch/utilBatch.handler',
+    environment: lambdaEnvVariables,
+    timeoutSecond: 60,
+    memorySize: 1024,
+    layersArn: layerArnList,
+  });
+  s3Bucket.grantReadWrite(funcUtilBatch as any); // なぜか型エラーが出て解決できない。。。苦肉のAs any。
+  dynamoTable.grantReadData(funcUtilBatch);
+
   /** ■■Lambda(開発環境用のテストハンドラー)■■ */
   if (!isProduction) {
     const funcDevelopmentTest = makeLambdaFunc({
       scope,
       id: 'DevelopmentTestHandler' + env,
-      codeDirPath: 'dist/lib/lambda',
+      codeDirPath,
       handler: 'Handler/Batch/developmentTest.handler',
       environment: { ...lambdaEnvVariables, LogLevel: 'TRACE', },
       timeoutSecond: 60,
@@ -116,7 +135,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     const getLiveLambda = makeLambdaFunc({
       scope,
       id: 'getLiveLambda' + env,
-      codeDirPath: 'dist/lib/lambda',
+      codeDirPath,
       handler: 'Handler/ApiGateway/getLive.handler',
       environment: { ...lambdaEnvVariables, },
       timeoutSecond: 3,
@@ -126,7 +145,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     const getContextLambda = makeLambdaFunc({
       scope,
       id: 'getContextLambda' + env,
-      codeDirPath: 'dist/lib/lambda',
+      codeDirPath,
       handler: 'Handler/ApiGateway/getContext.handler',
       environment: { ...lambdaEnvVariables, },
       timeoutSecond: 3,
