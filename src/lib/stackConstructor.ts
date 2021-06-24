@@ -66,7 +66,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
   const funcMain = makeLambdaFunc({
     scope,
     id: 'MainHandler' + env,
-    codeDirPath: 'lib/lambda',
+    codeDirPath: 'src/lib/lambda',
     handler: 'main.handler',
     environment: lambdaEnvVariables,
     timeoutSecond: isProduction ? 10 : 5,
@@ -82,7 +82,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
   const funcTransDynamoData = makeLambdaFunc({
     scope,
     id: 'TransDynamoDataHandler' + env,
-    codeDirPath: 'lib/lambda',
+    codeDirPath: 'src/lib/lambda',
     handler: 'transDynamoData.handler',
     environment: lambdaEnvVariables,
     timeoutSecond: 60,
@@ -101,7 +101,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     const funcDevelopmentTest = makeLambdaFunc({
       scope,
       id: 'DevelopmentTestHandler' + env,
-      codeDirPath: 'lib/lambda',
+      codeDirPath: 'src/lib/lambda',
       handler: 'developmentTest.handler',
       environment: { ...lambdaEnvVariables, LogLevel: 'TRACE', },
       timeoutSecond: 60,
@@ -116,7 +116,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     const getLiveLambda = makeLambdaFunc({
       scope,
       id: 'getLiveLambda' + env,
-      codeDirPath: 'lib/lambda',
+      codeDirPath: 'src/lib/lambda',
       handler: 'Handler/ApiGateway/getLive.handler',
       environment: { ...lambdaEnvVariables, },
       timeoutSecond: 3,
@@ -126,7 +126,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     const getContextLambda = makeLambdaFunc({
       scope,
       id: 'getContextLambda' + env,
-      codeDirPath: 'lib/lambda',
+      codeDirPath: 'src/lib/lambda',
       handler: 'Handler/ApiGateway/getContext.handler',
       environment: { ...lambdaEnvVariables, },
       timeoutSecond: 3,
