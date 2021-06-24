@@ -11,5 +11,7 @@ cdk.out
 package-lock.json
 .env
 docs/ignore/
+dist/
+
 ## デプロイ履歴
 deployHistory.txt
