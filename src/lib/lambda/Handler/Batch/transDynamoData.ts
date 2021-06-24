@@ -1,8 +1,8 @@
-import { searchDynamoDbBetween } from "./Interfaces/AWS/Dynamodb/db";
-import { dbSettingExecution } from "./Interfaces/AWS/Dynamodb/dbSettings";
-import { writeTextFile } from "./Interfaces/AWS/S3/writeTextFile";
-import { ExecutionAggregated } from "./Interfaces/DomainType";
-import { ProductId, ProductSetting, productSettings } from "./Main/productSettings";
+import { searchDynamoDbBetween } from "../../Interfaces/AWS/Dynamodb/db";
+import { dbSettingExecution } from "../../Interfaces/AWS/Dynamodb/dbSettings";
+import { writeTextFile } from "../../Interfaces/AWS/S3/writeTextFile";
+import { ExecutionAggregated } from "../../Interfaces/DomainType";
+import { ProductId, ProductSetting, productSettings } from "../../Main/productSettings";
 
 /**
  * target: 指定した日付を狙い撃ちしてデータ移行する場合は、その年月日を指定する。

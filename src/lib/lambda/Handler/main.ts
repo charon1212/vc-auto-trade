@@ -1,8 +1,8 @@
-import { processEnv } from './Common/processEnv';
-import { matchCron } from './Common/util';
-import handleError from './HandleError/handleError';
-import { sendSlackMessage } from './Interfaces/Slack/sendSlackMessage';
-import { entry } from './Main/entry';
+import { processEnv } from '../Common/processEnv';
+import { matchCron } from '../Common/util';
+import handleError from '../HandleError/handleError';
+import { sendSlackMessage } from '../Interfaces/Slack/sendSlackMessage';
+import { entry } from '../Main/entry';
 
 exports.handler = async function (event: any) {
 
