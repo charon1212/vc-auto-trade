@@ -4,7 +4,6 @@ import * as cdk from '@aws-cdk/core';
 import { VcAutoTradeStack } from '../lib/vc-auto-trade-stack';
 import { VcAutoTradeStackDev } from '../lib/vc-auto-trade-stack-dev';
 import * as fs from 'fs';
-import { confirmCommandLine } from './confirmCommandLine';
 
 const isProductionBuild = process.env.ENV_NAME === 'production';
 
