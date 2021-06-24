@@ -73,10 +73,18 @@ const productEntry = async (productSetting: ProductSetting) => {
 
   /** ■■ 処理フェーズ ■■ */
   appLogger.info3(`〇〇${productSetting.id}-PhaseExec-Start`);
-  const { newAggregatedExecutions, updatedOrder, newLongAggregatedExecution } = await execute({ executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, std, });
-
+  let newAggregatedExecutions: ExecutionAggregated[] = [];
+  let updatedOrder: { order: SimpleOrder; beforeState?: OrderState | undefined; }[] = [];
+  let newLongAggregatedExecution: ExecutionAggregated | undefined = undefined;
+  if (productContext?.executionSetting?.executePhase) {
+    const resultExecutePhase = await execute({ executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, std, });
+    newAggregatedExecutions = resultExecutePhase.newAggregatedExecutions;
+    updatedOrder = resultExecutePhase.updatedOrder;
+    newLongAggregatedExecution = resultExecutePhase.newLongAggregatedExecution;
+  }
   // 1分間の分だけ抽出
   const newAggregatedExecutions1Min = newAggregatedExecutions.slice(0, 6);
+
   appLogger.info3(`〇〇${productSetting.id}-PhaseExec-End-${JSON.stringify({ newAggregatedExecutions, updatedOrder, newLongAggregatedExecution })}`);
 
   /** ■■ 保存フェーズ ■■ */

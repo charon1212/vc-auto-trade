@@ -73,15 +73,18 @@ export type VCATProductContext = {
   afterSendOrder?: boolean,
   orderId?: string,
   buyOrderPrice?: number,
-  makeNewOrder?: boolean,
   startBuyTimestamp?: number,
+  executionSetting?: { // 各工程を実行するかどうか指定する
+    executePhase?: boolean, // 処理フェーズを実行する
+    executeMain?: boolean, // メインフェーズを実行する
+    makeNewOrder?: boolean, // 新規の買い注文を発注する
+  }
 };
 /**
  * オーダー状態
  * - Buy: 買い注文のタイミング待ち、または買い注文を出してから約定するまでの間
  * - Sell: 売り注文のタイミング待ち、または売り注文を出してから約定するまでの間
  * - StopLoss: 損切判断後、損切の注文が約定するまでの間
- * - WaitAfterStopLoss: 損切後の一時待機期間
  * - Wait: 注文を一切行わない待機期間
  */
 export type OrderPhase = 'Buy' | 'Sell' | 'StopLoss' | 'Wait';

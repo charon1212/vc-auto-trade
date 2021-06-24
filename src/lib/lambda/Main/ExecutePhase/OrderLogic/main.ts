@@ -123,7 +123,7 @@ const sendStopLossOrder = async (productSetting: ProductSetting, size: number, o
 
 const canMakeNewOrder = (context: VCATProductContext) => {
   // Contextの指定で新規注文の許可が出ていない場合
-  if (!context.makeNewOrder) return false;
+  if (!context.executionSetting?.makeNewOrder) return false;
   // 現在時刻が22:00～6:59の場合 (UTCで13時 <= t < 22時)の場合
   const nowHour = (new Date()).getUTCHours();
   if (nowHour >= 13 && nowHour < 22) return false;

@@ -10,7 +10,6 @@ export type ProductSetting = {
   },
   orderUnit: number, // 注文単位。
   maxOrderSize: number, // 最大注文量。注文単位の何倍かで定義。
-  executeOrderPhase: boolean, // 注文処理を実施するかどうか。
 };
 
 export type ProductId = 'XRP_JPY' | 'BTC_JPY' | 'ETH_JPY' | 'GMO-BTC';
@@ -34,7 +33,6 @@ const productSettingsProd: ProductSetting[] = [
     currencyCode: { real: 'JPY', virtual: 'BTC' },
     orderUnit: 0.0001,
     maxOrderSize: 100,
-    executeOrderPhase: false,
   },
 ];
 

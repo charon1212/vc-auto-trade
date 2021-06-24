@@ -39,7 +39,13 @@ const initializeProductContext = async (productId: ProductId | 'All') => {
     if (!context) return;
     if (context.orderPhase === undefined) context.orderPhase = 'Buy';
     if (context.afterSendOrder === undefined) context.afterSendOrder = false;
-    if (context.makeNewOrder === undefined) context.makeNewOrder = true;
+    if (context.executionSetting === undefined) {
+      context.executionSetting = {
+        executePhase: true,
+        executeMain: true,
+        makeNewOrder: true,
+      };
+    }
   });
   await saveProductContext();
 };

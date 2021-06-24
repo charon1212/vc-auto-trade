@@ -10,6 +10,7 @@ import { main } from "./OrderLogic/main";
 export const execute: ExecutePhaseFunction = async (input) => {
 
   const { executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, std } = input;
+  const context = await getProductContext(productSetting.id);
 
   await updateLastExecutionId(productSetting.id, executions, std);
 
@@ -19,7 +20,7 @@ export const execute: ExecutePhaseFunction = async (input) => {
   const existOutManageOrder = await checkExistOutManageOrder(orders.map((item) => item.order), productSetting);
 
   let newOrders: SimpleOrder[] = [];
-  if (productSetting.executeOrderPhase && !existOutManageOrder) {
+  if (context?.executionSetting?.executeMain && !existOutManageOrder) {
     newOrders = await main({
       shortAggregatedExecutions: [...shortAggregatedExecutions, ...newShortAggregatedExecutions],
       longAggregatedExecutions,
@@ -39,9 +40,7 @@ export const execute: ExecutePhaseFunction = async (input) => {
 };
 
 /**
- * プロダクトコンテキストを更新する
- * @param executions 
- * @param std 
+ * プロタクトコンテキストの「最後の約定」を設定する。
  */
 const updateLastExecutionId = async (productId: ProductId, executions: Execution[], std: StandardTime) => {
 
