@@ -113,7 +113,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     layersArn: layerArnList,
   });
   s3Bucket.grantReadWrite(funcUtilBatch as any); // なぜか型エラーが出て解決できない。。。苦肉のAs any。
-  dynamoTable.grantReadData(funcUtilBatch);
+  dynamoTable.grantFullAccess(funcUtilBatch);
 
   /** ■■Lambda(開発環境用のテストハンドラー)■■ */
   if (!isProduction) {

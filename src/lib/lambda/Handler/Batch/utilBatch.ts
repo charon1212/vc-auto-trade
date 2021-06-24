@@ -34,7 +34,7 @@ const executeSpecificProduct = async (productId: ProductId | 'All', executor: (p
 
 const initializeProductContext = async (productId: ProductId | 'All') => {
   await importProductContextFromDb();
-  executeSpecificProduct(productId, async (productSetting) => {
+  await executeSpecificProduct(productId, async (productSetting) => {
     const context = await getProductContext(productSetting.id);
     if (!context) return;
     if (context.orderPhase === undefined) context.orderPhase = 'Buy';
@@ -51,7 +51,7 @@ const initializeProductContext = async (productId: ProductId | 'All') => {
 };
 
 const deleteAllUnkActOrdersFromDb = async (productId: ProductId | 'All') => {
-  executeSpecificProduct(productId, async (productSetting) => {
+  await executeSpecificProduct(productId, async (productSetting) => {
     const unkOrders = await searchDynamoDbStartsWith(productSetting, dbSettingOrder, getOrderStateCode('UNKNOWN'));
     const actOrders = await searchDynamoDbStartsWith(productSetting, dbSettingOrder, getOrderStateCode('ACTIVE'));
     for (let order of [...unkOrders.items, ...actOrders.items]) {
