@@ -1,5 +1,5 @@
 import { appLogger } from "../../../Common/log";
-import { moveUp } from "../../../Common/util";
+import { getNowDate, moveUp } from "../../../Common/util";
 import handleError from "../../../HandleError/handleError";
 import { Balance, ExecutionAggregated, SimpleOrder, VCATProductContext } from "../../../Interfaces/DomainType";
 import { cancelOrder, sendOrder } from "../../../Interfaces/ExchangeApi/order";
@@ -125,7 +125,7 @@ const canMakeNewOrder = (context: VCATProductContext) => {
   // Contextの指定で新規注文の許可が出ていない場合
   if (!context.executionSetting?.makeNewOrder) return false;
   // 現在時刻が22:00～6:59の場合 (UTCで13時 <= t < 22時)の場合
-  const nowHour = (new Date()).getUTCHours();
+  const nowHour = (getNowDate()).getUTCHours();
   if (nowHour >= 13 && nowHour < 22) return false;
   return true;
 };

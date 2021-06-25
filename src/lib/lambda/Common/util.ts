@@ -114,3 +114,6 @@ export const executeAsyncInMilliseconds = async <T>(executor: () => Promise<T>, 
   const result = await Promise.all([executor(), sleep(milliseconds)]);
   return result[0];
 };
+
+export const getNowDate = () => (new Date());
+export const getNowTimestamp = () => (Date.now());

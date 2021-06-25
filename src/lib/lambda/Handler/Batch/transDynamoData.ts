@@ -1,3 +1,4 @@
+import { getNowDate } from "../../Common/util";
 import { searchDynamoDbBetween } from "../../Interfaces/AWS/Dynamodb/db";
 import { dbSettingExecution } from "../../Interfaces/AWS/Dynamodb/dbSettings";
 import { writeTextFile } from "../../Interfaces/AWS/S3/writeTextFile";
@@ -26,7 +27,7 @@ exports.handler = async function (event?: handlerEvent) {
 };
 
 const getYeasterday = () => {
-  const now = new Date();
+  const now = getNowDate();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
 };
 

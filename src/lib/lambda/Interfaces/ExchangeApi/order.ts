@@ -8,6 +8,7 @@ import { cancelOrder as cancelGmoOrder } from './GMO/cancelOrder';
 import { appLogger } from "../../Common/log";
 import { getOrders as getGmoOrders, OrderStatusGMO } from './GMO/getOrders';
 import { sendOrder as sendGmoOrder } from './GMO/sendOrder';
+import { getNowDate } from "../../Common/util";
 
 export const getOrders = async (productSetting: ProductSetting, orders: SimpleOrder[]) => {
   appLogger.info1(`★★${productSetting.id}-API-getOrders-CALL-${JSON.stringify({ orders, })}`);
@@ -105,7 +106,7 @@ const sendOrderBitflyer = async (productSetting: ProductSetting, orderType: 'LIM
     idBitflyer: {
       acceptanceId: result.child_order_acceptance_id,
     },
-    orderDate: new Date(),
+    orderDate: getNowDate(),
     state: 'UNKNOWN',
     main: {
       orderType: orderType,
@@ -132,7 +133,7 @@ const sendOrderGmo = async (productSetting: ProductSetting, orderType: 'LIMIT' |
   const order: SimpleOrder = {
     id: orderId,
     idGmo: result.data,
-    orderDate: new Date(),
+    orderDate: getNowDate(),
     state: 'UNKNOWN',
     main: {
       orderType: orderType,
