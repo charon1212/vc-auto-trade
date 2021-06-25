@@ -70,7 +70,7 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     codeDirPath,
     handler: 'Handler/main.handler',
     environment: lambdaEnvVariables,
-    timeoutSecond: isProduction ? 10 : 5,
+    timeoutSecond: isProduction ? 20 : 10,
     schedule: {
       id: 'rule' + env,
       cron: { minute: '*/1', hour: '*', day: '*', month: '*', year: '*' },
@@ -228,6 +228,7 @@ const makeLambdaFunc = (params: LambdaProp) => {
     timeout: timeout as any,
     memorySize: memorySize,
     layers: layers,
+    retryAttempts: 0,
   });
 
   if (params.schedule) {

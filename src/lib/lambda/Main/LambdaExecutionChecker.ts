@@ -1,4 +1,4 @@
-import { asyncExecution } from "../Common/util";
+import { asyncExecution, asyncExecutionArray } from "../Common/util";
 import { deleteDynamoDb, putDynamoDb, searchDynamoDbBetween } from "../Interfaces/AWS/Dynamodb/db";
 import { dbSettingLambdaExecutionLive } from "../Interfaces/AWS/Dynamodb/dbSettings";
 import { ProductSetting } from "./productSettings";
@@ -36,11 +36,11 @@ export class LambdaExecutionChecker {
   }
   /** endTimestamp以前の死活情報をすべて削除する。 */
   private async deleteBeforeCheckData(productSetting: ProductSetting, endTimestamp: number) {
-    const data = await searchDynamoDbBetween(productSetting, dbSettingLambdaExecutionLive, '0', endTimestamp.toString());
+    const data = await searchDynamoDbBetween(productSetting, dbSettingLambdaExecutionLive, '0', endTimestamp.toString(), 20);
     if (data?.items) {
-      await asyncExecution(...(data.items.map((item) => (async () => {
-        await deleteDynamoDb(productSetting, dbSettingLambdaExecutionLive, item.timestamp.toString());
-      }))));
+      await asyncExecutionArray(data.items, async (lambdaExecutionLive) => {
+        await deleteDynamoDb(productSetting, dbSettingLambdaExecutionLive, lambdaExecutionLive.timestamp.toString());
+      });
     }
   }
 }

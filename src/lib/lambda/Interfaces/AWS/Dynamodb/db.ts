@@ -68,7 +68,7 @@ export const searchDynamoDbStartsWith = async <T, DbType>(productSetting: Produc
   });
 };
 
-export const searchDynamoDbBetween = async <T, DbType>(productSetting: ProductSetting, dbSetting: DbSetting<T, DbType>, startSortKey: string, endSortKey: string,) => {
+export const searchDynamoDbBetween = async <T, DbType>(productSetting: ProductSetting, dbSetting: DbSetting<T, DbType>, startSortKey: string, endSortKey: string, limit?: number,) => {
   const classType = getClassType(productSetting, dbSetting);
   appLogger.info3(`▲▲${productSetting.id}-AWS-DynamoDB-searchDynamoDbBetween-${dbSetting.id}-CALL-${JSON.stringify({ classType, startSortKey, endSortKey })}`);
   return await searchDynamoDb(productSetting, dbSetting, {
@@ -76,6 +76,7 @@ export const searchDynamoDbBetween = async <T, DbType>(productSetting: ProductSe
     KeyConditionExpression: '#PK = :pk AND #SK BETWEEN :sk1 AND :sk2',
     ExpressionAttributeNames: { '#PK': 'ClassType', '#SK': 'SortKey', },
     ExpressionAttributeValues: { ':pk': classType, ':sk1': startSortKey, ':sk2': endSortKey, },
+    Limit: limit,
   });
 };
 
