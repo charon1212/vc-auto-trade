@@ -2,7 +2,7 @@ import { searchDynamoDbBetween } from "../../Interfaces/AWS/Dynamodb/db";
 import { dbSettingExecution } from "../../Interfaces/AWS/Dynamodb/dbSettings";
 import { writeTextFile } from "../../Interfaces/AWS/S3/writeTextFile";
 import { ExecutionAggregated } from "../../Interfaces/DomainType";
-import { ProductId, ProductSetting, productSettings } from "../../Main/productSettings";
+import { getProductSettings, ProductSetting } from "../../Main/productSettings";
 
 /**
  * target: 指定した日付を狙い撃ちしてデータ移行する場合は、その年月日を指定する。
@@ -18,7 +18,7 @@ exports.handler = async function (event?: handlerEvent) {
 
   const targetDate = event?.target ? new Date(event.target.year, event.target.month, event.target.date,) : getYeasterday();
   // 重ければ非同期処理を並列実行させる。今は直列実行（めんどいし、Dailyバッチで速度が必要ないため）
-  for (let productSetting of productSettings) {
+  for (let productSetting of getProductSettings()) {
     await exec(productSetting, targetDate);
   }
   return '';

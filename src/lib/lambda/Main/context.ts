@@ -3,7 +3,7 @@ import handleError from "../HandleError/handleError";
 import { getDynamoDb, putDynamoDb } from "../Interfaces/AWS/Dynamodb/db";
 import { dbSettingProductContext, sortKeyContext } from "../Interfaces/AWS/Dynamodb/dbSettings";
 import { VCATProductContext } from "../Interfaces/DomainType";
-import { getProductSetting, ProductId, productSettings } from "./productSettings";
+import { getProductSetting, getProductSettings, ProductId } from "./productSettings";
 
 let productContextList: { productId: ProductId, context: VCATProductContext, }[] | undefined;
 
@@ -14,7 +14,7 @@ let productContextList: { productId: ProductId, context: VCATProductContext, }[]
 export const importProductContextFromDb = async () => {
   /** スクリプトのフィールドで定義した変数「productContextList」は、Lambda関数実行ごとにクリアされるとは限らない。コンテナが再起動した場合は作り直されるが、そうでなければ前の情報を保持してしまう。そのため、必ずクリアする。 */
   productContextList = [];
-  for (let productSetting of productSettings) {
+  for (let productSetting of getProductSettings()) {
     const context = await getDynamoDb(productSetting, dbSettingProductContext, sortKeyContext) || {};
     productContextList.push({
       productId: productSetting.id,

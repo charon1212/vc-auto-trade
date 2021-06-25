@@ -12,7 +12,7 @@ import { getLongAggregatedExecutions } from "./InputPhase/getLongAggregatedExecu
 import { getOrders } from "./InputPhase/getOrders";
 import { getShortAggregatedExecutions } from "./InputPhase/getShortAggregatedExecutions";
 import { LambdaExecutionChecker } from "./LambdaExecutionChecker";
-import { ProductSetting, productSettings } from "./productSettings";
+import { getProductSettings, ProductSetting } from "./productSettings";
 import { StandardTime } from "./StandardTime";
 
 export const entry = async () => {
@@ -20,7 +20,7 @@ export const entry = async () => {
   await importProductContextFromDb();
 
   const promiseList: Promise<any>[] = [];
-  for (let productSetting of productSettings) {
+  for (let productSetting of getProductSettings()) {
     promiseList.push(productEntry(productSetting));
   }
   await Promise.all(promiseList);

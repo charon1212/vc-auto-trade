@@ -1,7 +1,7 @@
 import handleError from "../../HandleError/handleError";
 import { Execution, SimpleOrder, VCATProductContext } from "../../Interfaces/DomainType";
 import { getProductContext } from "../context";
-import { ProductId, ProductSetting, productSettings } from "../productSettings";
+import { ProductId, ProductSetting } from "../productSettings";
 import { StandardTime } from "../StandardTime";
 import { aggregateExecution } from "./aggregateExecution";
 import { ExecutePhaseFunction } from "./interface";

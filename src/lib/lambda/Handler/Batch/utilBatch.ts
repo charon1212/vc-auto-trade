@@ -2,7 +2,7 @@ import { asyncExecutionArray } from "../../Common/util";
 import { deleteDynamoDb, searchDynamoDbStartsWith } from "../../Interfaces/AWS/Dynamodb/db";
 import { dbSettingOrder, getOrderSortKey, getOrderStateCode } from "../../Interfaces/AWS/Dynamodb/dbSettings";
 import { getProductContext, importProductContextFromDb, saveProductContext } from "../../Main/context";
-import { ProductId, ProductSetting, productSettings } from "../../Main/productSettings";
+import { getProductSettings, ProductId, ProductSetting } from "../../Main/productSettings";
 
 type Event = {
   batchName?: string,
@@ -25,9 +25,9 @@ exports.handler = async (event: Event) => {
  */
 const executeSpecificProduct = async (productId: ProductId | 'All', executor: (productSetting: ProductSetting) => Promise<void>) => {
   if (productId === 'All') {
-    asyncExecutionArray(productSettings, executor);
+    asyncExecutionArray(getProductSettings(), executor);
   } else {
-    const productSetting = productSettings.find((s) => s.id === productId);
+    const productSetting = getProductSettings().find((s) => s.id === productId);
     if (productSetting) await executor(productSetting);
   }
 };
