@@ -8,7 +8,7 @@ type Expectation = {
   putData: any[],
   deleteSortKey: string[],
 };
-type DynamoDbExpectations = {
+export type DynamoDbExpectations = {
   productContext: Expectation,
   execution: Expectation,
   longExecution: Expectation,
@@ -32,13 +32,13 @@ const assertion = (mockObject: MockObject, expectation: Expectation, productSett
   for (let count = 0; count < expectation.putData.length; count++) {
     const put = expectation.putData[count];
     const call = targetPutCalls[count];
-    expect(call).toBe([productSetting, dbSetting, put]);
+    expect(call).toEqual([productSetting, dbSetting, put]);
   }
   const targetDeleteCalss = mockObject.mockDeleteDynamoDb.mock.calls.filter((call) => (call[0].id === productSetting.id && call[1].id === dbSetting.id));
   expect(targetDeleteCalss.length).toBe(expectation.deleteSortKey.length);
   for (let count = 0; count < expectation.deleteSortKey.length; count++) {
     const expected = expectation.putData[count];
     const actual = targetDeleteCalss[2];
-    expect(actual).toBe(expected);
+    expect(actual).toEqual(expected);
   }
 };
