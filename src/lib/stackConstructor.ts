@@ -41,6 +41,8 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
     },
     tableName: 'vcAutoTrade' + env,
     removalPolicy: cdk.RemovalPolicy.RETAIN,
+    readCapacity: 10,
+    writeCapacity: 10,
   });
 
   /** ■■S3 Bucket■■ */
