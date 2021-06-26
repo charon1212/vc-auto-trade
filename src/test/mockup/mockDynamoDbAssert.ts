@@ -16,23 +16,25 @@ type DynamoDbExpectations = {
   lambdaExecutionLive: Expectation,
 };
 
-export const mockDynamoDbAssert = (productSetting: ProductSetting, mockObject: MockObject, expectations: DynamoDbExpectations) => {
-  assertion(mockObject, expectations.productContext, productSetting, dbSettingProductContext);
-  assertion(mockObject, expectations.execution, productSetting, dbSettingExecution);
-  assertion(mockObject, expectations.longExecution, productSetting, dbSettingLongExecution);
-  assertion(mockObject, expectations.order, productSetting, dbSettingOrder);
-  assertion(mockObject, expectations.lambdaExecutionLive, productSetting, dbSettingLambdaExecutionLive);
+export const mockDynamoDbAssert = (productSettings: ProductSetting[], mockObject: MockObject, expectations: DynamoDbExpectations) => {
+  for (let productSetting of productSettings) {
+    assertion(mockObject, expectations.productContext, productSetting, dbSettingProductContext);
+    assertion(mockObject, expectations.execution, productSetting, dbSettingExecution);
+    assertion(mockObject, expectations.longExecution, productSetting, dbSettingLongExecution);
+    assertion(mockObject, expectations.order, productSetting, dbSettingOrder);
+    assertion(mockObject, expectations.lambdaExecutionLive, productSetting, dbSettingLambdaExecutionLive);
+  }
 };
 
 const assertion = (mockObject: MockObject, expectation: Expectation, productSetting: ProductSetting, dbSetting: DbSetting<any, any>) => {
-  const targetPutCalls = mockObject.mockPutDynamoDb.mock.calls.filter((call) => call[1].id === dbSetting.id);
+  const targetPutCalls = mockObject.mockPutDynamoDb.mock.calls.filter((call) => (call[0].id === productSetting.id && call[1].id === dbSetting.id));
   expect(targetPutCalls.length).toBe(expectation.putData.length);
   for (let count = 0; count < expectation.putData.length; count++) {
     const put = expectation.putData[count];
     const call = targetPutCalls[count];
     expect(call).toBe([productSetting, dbSetting, put]);
   }
-  const targetDeleteCalss = mockObject.mockDeleteDynamoDb.mock.calls.filter((call) => call[1].id === dbSetting.id);
+  const targetDeleteCalss = mockObject.mockDeleteDynamoDb.mock.calls.filter((call) => (call[0].id === productSetting.id && call[1].id === dbSetting.id));
   expect(targetDeleteCalss.length).toBe(expectation.deleteSortKey.length);
   for (let count = 0; count < expectation.deleteSortKey.length; count++) {
     const expected = expectation.putData[count];
