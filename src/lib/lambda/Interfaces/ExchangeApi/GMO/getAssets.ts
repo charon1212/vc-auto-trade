@@ -2,7 +2,7 @@ import handleError from "../../../HandleError/handleError";
 import { sendRequest } from "./apiRequest";
 import { hasNanAttributeList } from "./util";
 
-type AssetGMO = {
+export type AssetGMO = {
   amount: number,
   available: number,
   conversionRate: number,
