@@ -46,5 +46,5 @@ const productSettings: ProductSetting[] = processEnv.EnvName === 'production' ? 
 export const getProductSettings = () => (productSettings);
 
 export const getProductSetting = (productId: ProductId) => {
-  return productSettings.find((item) => (item.id === productId));
+  return getProductSettings().find((item) => (item.id === productId));
 };
