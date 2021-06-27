@@ -1,4 +1,5 @@
 import { appLogger } from "../../../Common/log";
+import { getNowTimestamp } from "../../../Common/util";
 import { OrderPhase, SimpleOrder, VCATProductContext } from "../../../Interfaces/DomainType";
 import { sendSlackMessage } from "../../../Interfaces/Slack/sendSlackMessage";
 import { ProductSetting } from "../../productSettings";
@@ -56,7 +57,7 @@ export class OrderStateController {
     this.context.orderPhase = 'StopLoss';
     this.context.afterSendOrder = true;
     this.context.orderId = order.id;
-    if (restartTimeSpanMilliseconds !== undefined) this.context.startBuyTimestamp = Date.now() + restartTimeSpanMilliseconds;
+    if (restartTimeSpanMilliseconds !== undefined) this.context.startBuyTimestamp = getNowTimestamp() + restartTimeSpanMilliseconds;
     appLogger.info1(`〇〇〇${this.setting.id}-ChangePhase-Sell→StopLoss`);
     await sendSlackMessage(`★Stop Loss.`, false);
   };

@@ -1,5 +1,5 @@
 import { appLogger } from "../Common/log";
-import { asyncExecution } from "../Common/util";
+import { asyncExecution, getNowTimestamp } from "../Common/util";
 import handleError from "../HandleError/handleError";
 import { deleteDynamoDb, putDynamoDb } from "../Interfaces/AWS/Dynamodb/db";
 import { dbSettingExecution, dbSettingLongExecution, dbSettingOrder, getOrderSortKey } from "../Interfaces/AWS/Dynamodb/dbSettings";
@@ -38,7 +38,7 @@ const productEntry = async (productSetting: ProductSetting) => {
   const productContext = await getProductContext(productSetting.id);
 
   // 基準時刻を作る。
-  const std = new StandardTime(Date.now());
+  const std = new StandardTime(getNowTimestamp());
   // 死活チェッカー
   lambdaExecutionChecker = new LambdaExecutionChecker();
 

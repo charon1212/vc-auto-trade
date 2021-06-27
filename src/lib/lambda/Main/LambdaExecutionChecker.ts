@@ -1,4 +1,4 @@
-import { asyncExecution, asyncExecutionArray } from "../Common/util";
+import { asyncExecution, asyncExecutionArray, getNowTimestamp } from "../Common/util";
 import { deleteDynamoDb, putDynamoDb, searchDynamoDbBetween } from "../Interfaces/AWS/Dynamodb/db";
 import { dbSettingLambdaExecutionLive } from "../Interfaces/AWS/Dynamodb/dbSettings";
 import { ProductSetting } from "./productSettings";
@@ -16,7 +16,7 @@ export class LambdaExecutionChecker {
   constructor() {
     this.isExecuteMain = false;
     this.isExecuteLast = false;
-    this.timestamp = Date.now();
+    this.timestamp = getNowTimestamp();
   }
   executeMain() {
     this.isExecuteMain = true;

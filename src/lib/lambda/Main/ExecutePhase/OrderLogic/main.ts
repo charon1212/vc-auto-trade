@@ -1,5 +1,5 @@
 import { appLogger } from "../../../Common/log";
-import { getNowDate, moveUp } from "../../../Common/util";
+import { getNowDate, getNowTimestamp, moveUp } from "../../../Common/util";
 import handleError from "../../../HandleError/handleError";
 import { Balance, ExecutionAggregated, SimpleOrder, VCATProductContext } from "../../../Interfaces/DomainType";
 import { cancelOrder, sendOrder } from "../../../Interfaces/ExchangeApi/order";
@@ -86,7 +86,7 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
   } else if (productContext.orderPhase === 'Wait') {
     // 再開時間に到達した場合、買い状態に遷移する。
     const startBuyTimestamp = productContext.startBuyTimestamp;
-    if (startBuyTimestamp && Date.now() > startBuyTimestamp) {
+    if (startBuyTimestamp && getNowTimestamp()> startBuyTimestamp) {
       orderStateController.onStartBuy();
     }
   }

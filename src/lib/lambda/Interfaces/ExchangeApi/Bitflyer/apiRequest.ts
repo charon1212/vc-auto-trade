@@ -5,6 +5,7 @@ import * as crypto from 'crypto';
 import { processEnv } from "../../../Common/processEnv";
 import handleError from "../../../HandleError/handleError";
 import { convertQueryParamsToStr } from "../util";
+import { getNowTimestamp } from "../../../Common/util";
 
 export type RequestMethod = 'GET' | 'POST';
 /**
@@ -32,7 +33,7 @@ export const sendRequest = async (params: { uri: string, method: RequestMethod, 
     url = urlBaseBitflyer + uri + convertQueryParamsToStr(queryParams);
 
     // ヘッダー取得処理
-    const timestamp = Date.now();
+    const timestamp = getNowTimestamp();
     const additionalHeaders = isPrivateHTTP ? getPrivateApiRequestHeader(timestamp, params.method, '/v1/' + path, params.body) : {};
     headers = { ...additionalHeaders, ...params.headers };
 
