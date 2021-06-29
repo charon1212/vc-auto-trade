@@ -2,7 +2,7 @@ import * as dbModule from "../../lib/lambda/Interfaces/AWS/Dynamodb/db";
 import { DbSetting } from "../../lib/lambda/Interfaces/AWS/Dynamodb/db";
 import { ProductSetting } from "../../lib/lambda/Main/productSettings";
 
-type DynamoDbRecord = {
+export type DynamoDbRecord = {
   ClassType: string,
   SortKey: string,
   data: any,

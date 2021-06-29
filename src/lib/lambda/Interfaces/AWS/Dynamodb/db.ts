@@ -13,7 +13,7 @@ export type DbSetting<T, DbType> = {
   decode: (item: DbType) => T,
 };
 
-const getClassType = <T, DbType>(productSetting: ProductSetting, dbSetting: DbSetting<T, DbType>,) => {
+export const getClassType = <T, DbType>(productSetting: ProductSetting, dbSetting: DbSetting<T, DbType>,) => {
   return productSetting.id + dbSetting.classTypeSuffix;
 }
 

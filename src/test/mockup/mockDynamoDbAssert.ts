@@ -16,13 +16,16 @@ export type DynamoDbExpectations = {
   lambdaExecutionLive: Expectation,
 };
 
-export const mockDynamoDbAssert = (productSettings: ProductSetting[], mockObject: MockObject, expectations: DynamoDbExpectations) => {
-  for (let productSetting of productSettings) {
-    assertion(mockObject, expectations.productContext, productSetting, dbSettingProductContext);
-    assertion(mockObject, expectations.execution, productSetting, dbSettingExecution);
-    assertion(mockObject, expectations.longExecution, productSetting, dbSettingLongExecution);
-    assertion(mockObject, expectations.order, productSetting, dbSettingOrder);
-    assertion(mockObject, expectations.lambdaExecutionLive, productSetting, dbSettingLambdaExecutionLive);
+export const mockDynamoDbAssert = (productSettings: ProductSetting[], mockObject: MockObject, expectations: DynamoDbExpectations[]) => {
+  expect(productSettings.length).toBe(expectations.length);
+  for(let index = 0; index < productSettings.length; index++){
+    const productSetting = productSettings[index];
+    const expectation = expectations[index];
+    assertion(mockObject, expectation.productContext, productSetting, dbSettingProductContext);
+    assertion(mockObject, expectation.execution, productSetting, dbSettingExecution);
+    assertion(mockObject, expectation.longExecution, productSetting, dbSettingLongExecution);
+    assertion(mockObject, expectation.order, productSetting, dbSettingOrder);
+    assertion(mockObject, expectation.lambdaExecutionLive, productSetting, dbSettingLambdaExecutionLive);
   }
 };
 

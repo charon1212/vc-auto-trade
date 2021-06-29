@@ -1,11 +1,16 @@
+import { DbSetting, getClassType } from '../../lib/lambda/Interfaces/AWS/Dynamodb/db';
+import { dbSettingProductContext } from '../../lib/lambda/Interfaces/AWS/Dynamodb/dbSettings';
 import * as contextModule from '../../lib/lambda/Main/context';
 import { entry } from '../../lib/lambda/Main/entry';
 import * as productSettingsModule from "../../lib/lambda/Main/productSettings";
-import { mockDynamoDb } from '../mockup/mockDynamoDb';
+import { ProductSetting } from '../../lib/lambda/Main/productSettings';
+import { DynamoDbRecord, mockDynamoDb } from '../mockup/mockDynamoDb';
 import { DynamoDbExpectations, mockDynamoDbAssert } from '../mockup/mockDynamoDbAssert';
 import { mockGmoApi } from '../mockup/mockGmoApi';
 import { mockLog } from '../mockup/mockLog';
 import { mockSendSlackMessage } from '../mockup/mockSendSlackmessage';
+import { dbContext001 } from './data/dbContext';
+import { productSetting001 } from './data/productSetting';
 
 describe('メイン処理', () => {
   beforeEach(() => {
@@ -16,12 +21,9 @@ describe('メイン処理', () => {
   ];
   it.each(testParams)('各サブテスト', async (param: MainTestParams) => {
 
+    // 環境変数
     setProcessEnv();
-    const mockObjectDb = mockDynamoDb(getSampleDynamoDbData());
-    const mockObjectApi = mockGmoApi({ assets: [], executions: [], orders: [], trades: [] });
-    const mockObjectLog = mockLog();
-    const mockObjectSlack = mockSendSlackMessage();
-    const spyGetProductSettings = jest.spyOn(productSettingsModule, 'getProductSettings').mockReturnValue([sampleProductSetting]);
+    const { mockObjectDb, mockObjectApi, mockObjectLog, mockObjectSlack, spyGetProductSettings, productSetting, } = mockInput001();
 
     // テスト実行
     await entry();
@@ -35,7 +37,7 @@ describe('メイン処理', () => {
         makeNewOrder: false,
       }
     });
-    mockDynamoDbAssert([sampleProductSetting], mockObjectDb, expectationsDb);
+    mockDynamoDbAssert([productSetting], mockObjectDb, [expectationsDb]);
 
   });
 });
@@ -45,30 +47,38 @@ type MainTestParams = {
   sample2: string,
 };
 
-const sampleProductSetting: any = {
-  id: 'TestProductId',
-  currencyCode: { real: 'JPY', virtual: 'BTC' },
-  exchangeCode: 'GMO',
-  productCode: 'BTC',
-  orderUnit: 0.0001,
-  maxOrderSize: 100,
+const mockInput001 = () => {
+  const productSetting = productSetting001() as any;
+  // DB
+  const dbData001: DynamoDbRecord[] = [];
+  dbData001.push(...(getDbMockData(productSetting, dbSettingProductContext, [dbContext001() as any])));
+
+  const mockObjectDb = mockDynamoDb(dbData001 as any);
+  // API
+  const mockObjectApi = mockGmoApi({ assets: [], executions: [], orders: [], trades: [] });
+  // ログ
+  const mockObjectLog = mockLog();
+  // Slack
+  const mockObjectSlack = mockSendSlackMessage();
+  // ProductSetting
+  const spyGetProductSettings = jest.spyOn(productSettingsModule, 'getProductSettings').mockReturnValue([productSetting]);
+
+  return {
+    mockObjectDb,
+    mockObjectApi,
+    mockObjectLog,
+    mockObjectSlack,
+    spyGetProductSettings,
+    productSetting,
+  };
 };
 
-const getSampleDynamoDbData = () => {
-  const dataList: { ClassType: string, SortKey: string, data: any }[] = [];
-  // コンテキスト
-  dataList.push({
-    ClassType: 'TestProductIdCONTEXT', SortKey: 'context',
-    data: {
-      orderPhase: 'Wait', afterSendOrder: false, executionSetting: {
-        executePhase: false,
-        executeMain: false,
-        makeNewOrder: false,
-      }
-    }
-  });
-
-  return dataList;
+const getDbMockData = <T, DbType>(productSetting: ProductSetting, dbSetting: DbSetting<T, DbType>, data: T[]): DynamoDbRecord[] => {
+  return data.map((d) => ({
+    ClassType: getClassType(productSetting, dbSetting),
+    SortKey: dbSetting.sortKey(d),
+    data: d,
+  }));
 };
 
 const setProcessEnv = () => {
