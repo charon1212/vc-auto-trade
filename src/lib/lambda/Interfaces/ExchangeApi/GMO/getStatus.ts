@@ -8,7 +8,7 @@ export type GetStatusResult = {
 export const getStatus = async () => {
   try {
     const res = await sendRequest({
-      uri: '/v1/trades',
+      uri: '/v1/status',
       method: 'GET',
     }, false, true, true);
     if (!res) return undefined; // API通信でエラー、または200系でない。
