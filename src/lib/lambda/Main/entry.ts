@@ -4,6 +4,7 @@ import handleError from "../HandleError/handleError";
 import { deleteDynamoDb, putDynamoDb } from "../Interfaces/AWS/Dynamodb/db";
 import { dbSettingExecution, dbSettingLongExecution, dbSettingOrder, getOrderSortKey } from "../Interfaces/AWS/Dynamodb/dbSettings";
 import { Balance, Execution, ExecutionAggregated, SimpleOrder, OrderState } from "../Interfaces/DomainType";
+import { getApiStatus } from "../Interfaces/ExchangeApi/apiStatus";
 import { getProductContext, importProductContextFromDb, saveProductContext } from "./context";
 import { execute } from "./ExecutePhase/execute";
 import { getBalances } from "./InputPhase/getBalances";
@@ -43,6 +44,13 @@ const productEntry = async (productSetting: ProductSetting) => {
   lambdaExecutionChecker = new LambdaExecutionChecker();
 
   appLogger.info1(`〇${productSetting.id}-EntryStart-${JSON.stringify({ std: std.getStd(), productContext, })}`);
+
+  /** ■■ APIステータス確認 ■■ */
+  const apiStatus = await getApiStatus(productSetting);
+  if (!apiStatus) {
+    appLogger.info1('APIステータス：利用不可');
+    return;
+  }
 
   /** ■■ 入力フェーズ ■■ */
   appLogger.info3(`〇〇${productSetting.id}-PhaseInput-Start`);
