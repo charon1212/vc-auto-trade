@@ -117,3 +117,10 @@ export const executeAsyncInMilliseconds = async <T>(executor: () => Promise<T>, 
 
 export const getNowDate = () => (new Date());
 export const getNowTimestamp = () => (Date.now());
+
+export const isNumber = (obj: any) => {
+  return ((typeof obj === 'number') && isFinite(obj));
+}
+export const isString = (obj: any) => {
+  return (typeof obj === 'string');
+}

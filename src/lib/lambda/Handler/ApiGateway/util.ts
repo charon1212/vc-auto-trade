@@ -15,8 +15,8 @@ export const makeRequestResponse = (statusCode: number, body: Object): ApiRespon
   }
 };
 
-export const make404Response = (errorMessage: string): ApiResponse => {
-  return makeRequestResponse(404, {
+export const makeErrorResponse = (statusCode: number, errorMessage: string): ApiResponse => {
+  return makeRequestResponse(statusCode, {
     errorMessage,
   });
 }

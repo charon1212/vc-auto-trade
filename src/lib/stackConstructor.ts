@@ -134,37 +134,63 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
 
   /** ■■API。今のところ開発環境のみ。■■ */
   if (!isProduction) {
-    const getLiveLambda = makeLambdaFunc({
-      scope,
-      id: 'getLiveLambda' + env,
-      codeDirPath,
-      handler: 'Handler/ApiGateway/getLive.handler',
-      environment: { ...lambdaEnvVariables, },
-      timeoutSecond: 3,
-      layersArn: layerArnList,
-    });
-    dynamoTable.grantFullAccess(getLiveLambda);
-    const getContextLambda = makeLambdaFunc({
-      scope,
-      id: 'getContextLambda' + env,
-      codeDirPath,
-      handler: 'Handler/ApiGateway/getContext.handler',
-      environment: { ...lambdaEnvVariables, },
-      timeoutSecond: 3,
-      layersArn: layerArnList,
-    });
-    dynamoTable.grantFullAccess(getContextLambda);
-
     const api = new apiGateway.RestApi(scope, 'vcatApiGateway', {
       restApiName: 'VCAT API',
     });
     const rootResource = api.root.addResource('vcat').addResource('v1').addResource('{productId}');
-    const liveResource = rootResource.addResource('live');
-    liveResource.addMethod('GET', new apiGateway.LambdaIntegration(getLiveLambda));
-    const contextResource = rootResource.addResource('context');
-    contextResource.addMethod('GET', new apiGateway.LambdaIntegration(getContextLambda));
+    addApiEndpoint({
+      scope, env, codeDirPath, lambdaEnvVariables, layerArnList, dynamoTable, rootResource,
+      handlerName: 'getLive',
+      apiMethod: 'GET',
+      resourcePath: 'live',
+    });
+    addApiEndpoint({
+      scope, env, codeDirPath, lambdaEnvVariables, layerArnList, dynamoTable, rootResource,
+      handlerName: 'getContext',
+      apiMethod: 'GET',
+      resourcePath: 'context',
+    });
+    addApiEndpoint({
+      scope, env, codeDirPath, lambdaEnvVariables, layerArnList, dynamoTable, rootResource,
+      handlerName: 'patchContext',
+      apiMethod: 'PATCH',
+      resourcePath: 'context',
+    });
   }
 
+};
+
+type ApiEndpointParams = {
+  scope: cdk.Construct,
+  handlerName: string,
+  env: string,
+  codeDirPath: string,
+  lambdaEnvVariables: { [key: string]: string; },
+  layerArnList: string[],
+  dynamoTable: Table,
+  rootResource: apiGateway.Resource,
+  resourcePath: string,
+  apiMethod: string,
+}
+/**
+ * APIにエンドポイントを追加する。
+ */
+const addApiEndpoint = (params: ApiEndpointParams) => {
+  const { scope, handlerName, env, codeDirPath, lambdaEnvVariables, layerArnList, dynamoTable, rootResource, resourcePath, apiMethod } = params;
+  const apiHandlerLambda = makeLambdaFunc({
+    scope,
+    id: handlerName + 'Lambda' + env,
+    codeDirPath,
+    handler: 'Handler/ApiGateway/' + handlerName + '.handler',
+    environment: { ...lambdaEnvVariables, },
+    timeoutSecond: 3,
+    layersArn: layerArnList,
+  });
+  dynamoTable.grantFullAccess(apiHandlerLambda);
+  const resource = rootResource.addResource(resourcePath);
+  resource.addMethod(apiMethod, new apiGateway.LambdaIntegration(apiHandlerLambda));
+
+  return { apiHandlerLambda, resource };
 };
 
 const getEnvSettings = () => {

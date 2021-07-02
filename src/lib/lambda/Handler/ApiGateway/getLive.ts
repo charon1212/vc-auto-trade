@@ -2,7 +2,7 @@ import { appLogger } from "../../Common/log";
 import { searchDynamoDbLast } from "../../Interfaces/AWS/Dynamodb/db"
 import { dbSettingLambdaExecutionLive } from "../../Interfaces/AWS/Dynamodb/dbSettings";
 import { ApiRequestEvent, ApiResponse } from "./type";
-import { getProductSettingFromRequestEvent, make404Response, makeRequestResponse } from "./util"
+import { getProductSettingFromRequestEvent, makeErrorResponse, makeRequestResponse } from "./util"
 
 exports.handler = async function (event: ApiRequestEvent): Promise<ApiResponse> {
 
@@ -16,7 +16,7 @@ exports.handler = async function (event: ApiRequestEvent): Promise<ApiResponse> 
 const getLive = async (event: ApiRequestEvent) => {
   const productSetting = getProductSettingFromRequestEvent(event);
   if (!productSetting) {
-    return make404Response('ProductIdが見つからない');
+    return makeErrorResponse(404, 'ProductIdが見つからない');
   }
   const lastLiveData = await searchDynamoDbLast(productSetting, dbSettingLambdaExecutionLive);
   appLogger.info1(`▼▼▼GetLiveResult-${JSON.stringify({ lastLiveData })}`);
@@ -26,5 +26,5 @@ const getLive = async (event: ApiRequestEvent) => {
       live: data,
     });
   }
-  return make404Response('死活データの取得に失敗');
+  return makeErrorResponse(404, '死活データの取得に失敗');
 };
