@@ -12,9 +12,10 @@ import { getExecutions } from "./InputPhase/getExecutions";
 import { getLongAggregatedExecutions } from "./InputPhase/getLongAggregatedExecutions";
 import { getOrders } from "./InputPhase/getOrders";
 import { getShortAggregatedExecutions } from "./InputPhase/getShortAggregatedExecutions";
-import { LambdaExecutionChecker } from "./LambdaExecutionChecker";
+import { LambdaExecutionChecker } from "./VcatDiContainer/LambdaExecutionChecker";
 import { getProductSettings, ProductSetting } from "./productSettings";
-import { StandardTime } from "./StandardTime";
+import { StandardTime } from "./VcatDiContainer/StandardTime";
+import { saveVcatDiContainer, setupVcatDiContainer } from "./VcatDiContainer/vcatDiContainer";
 
 export const entry = async () => {
 
@@ -31,19 +32,13 @@ export const entry = async () => {
 
 };
 
-export let lambdaExecutionChecker: LambdaExecutionChecker;
-
 /** プロダクトごとのエントリー */
 const productEntry = async (productSetting: ProductSetting) => {
 
+  const diContainer = setupVcatDiContainer(productSetting)
   const productContext = await getProductContext(productSetting.id);
 
-  // 基準時刻を作る。
-  const std = new StandardTime(getNowTimestamp());
-  // 死活チェッカー
-  lambdaExecutionChecker = new LambdaExecutionChecker();
-
-  appLogger.info1(`〇${productSetting.id}-EntryStart-${JSON.stringify({ std: std.getStd(), productContext, })}`);
+  appLogger.info1(`〇${productSetting.id}-EntryStart-${JSON.stringify({ std: diContainer.standardTime.getStd(), productContext, })}`);
 
   /** ■■ APIステータス確認 ■■ */
   const apiStatus = await getApiStatus(productSetting);
@@ -62,9 +57,9 @@ const productEntry = async (productSetting: ProductSetting) => {
   let balanceVirtual: Balance | undefined = undefined; // 仮想通貨の資産残高
 
   await asyncExecution(
-    async () => { executions = await getExecutions(productSetting, std.getStd()) },
-    async () => { shortAggregatedExecutions = await getShortAggregatedExecutions(productSetting, std.getStd()) },
-    async () => { longAggregatedExecutions = await getLongAggregatedExecutions(productSetting, std.getStd()) },
+    async () => { executions = await getExecutions(productSetting, diContainer.standardTime.getStd()) },
+    async () => { shortAggregatedExecutions = await getShortAggregatedExecutions(productSetting, diContainer.standardTime.getStd()) },
+    async () => { longAggregatedExecutions = await getLongAggregatedExecutions(productSetting, diContainer.standardTime.getStd()) },
     async () => { orders = await getOrders(productSetting) },
     async () => {
       const obj = await getBalances(productSetting.exchangeCode, productSetting.currencyCode.real, productSetting.currencyCode.virtual);
@@ -85,7 +80,7 @@ const productEntry = async (productSetting: ProductSetting) => {
   let updatedOrder: { order: SimpleOrder; beforeState?: OrderState | undefined; }[] = [];
   let newLongAggregatedExecution: ExecutionAggregated | undefined = undefined;
   if (productContext?.executionSetting?.executePhase) {
-    const resultExecutePhase = await execute({ executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, std, });
+    const resultExecutePhase = await execute({ executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, });
     newAggregatedExecutions = resultExecutePhase.newAggregatedExecutions;
     updatedOrder = resultExecutePhase.updatedOrder;
     newLongAggregatedExecution = resultExecutePhase.newLongAggregatedExecution;
@@ -104,10 +99,10 @@ const productEntry = async (productSetting: ProductSetting) => {
   );
   appLogger.info3(`〇〇${productSetting.id}-PhaseOutput-End`);
 
-  appLogger.info1(`〇${productSetting.id}-EntryEnd-${JSON.stringify({ std: std.getStd(), productContext, })}`);
+  appLogger.info1(`〇${productSetting.id}-EntryEnd-${JSON.stringify({ std: diContainer.standardTime.getStd(), productContext, })}`);
 
-  lambdaExecutionChecker.executeLast();
-  await lambdaExecutionChecker.registerDb(productSetting);
+  diContainer.lambdaExecutionChecker.executeLast();
+  await saveVcatDiContainer(productSetting);
 
 };
 

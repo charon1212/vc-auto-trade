@@ -4,8 +4,8 @@ import handleError from "../../../HandleError/handleError";
 import { Balance, ExecutionAggregated, SimpleOrder, VCATProductContext } from "../../../Interfaces/DomainType";
 import { cancelOrder, sendOrder } from "../../../Interfaces/ExchangeApi/order";
 import { getProductContext } from "../../context";
-import { lambdaExecutionChecker } from "../../entry";
 import { ProductSetting } from "../../productSettings";
+import { getVcatDiContainer } from "../../VcatDiContainer/vcatDiContainer";
 import { judgeBuyTiming } from "./buyJudge";
 import { getLatestExecution } from "./judgeUtil";
 import { OrderStateController } from "./orderStateController";
@@ -26,6 +26,7 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
 
   const { shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, } = input;
 
+  const diContainer = await getVcatDiContainer(productSetting.id);
   const productContext = await getProductContext(productSetting.id);
   if (!productContext) {
     await handleError(__filename, 'main', 'code', 'コンテキストが見つかりませんでした。', { productSetting });
@@ -86,13 +87,13 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
   } else if (productContext.orderPhase === 'Wait') {
     // 再開時間に到達した場合、買い状態に遷移する。
     const startBuyTimestamp = productContext.startBuyTimestamp;
-    if (startBuyTimestamp && getNowTimestamp()> startBuyTimestamp) {
+    if (startBuyTimestamp && getNowTimestamp() > startBuyTimestamp) {
       orderStateController.onStartBuy();
     }
   }
 
   // 死活チェッカーに実行したことを知らせる。
-  lambdaExecutionChecker.executeMain();
+  diContainer.lambdaExecutionChecker.executeMain();
   return newOrders;
 
 };

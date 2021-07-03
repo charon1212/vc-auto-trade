@@ -1,7 +1,7 @@
-import { asyncExecution, asyncExecutionArray, getNowTimestamp } from "../Common/util";
-import { deleteDynamoDb, putDynamoDb, searchDynamoDbBetween } from "../Interfaces/AWS/Dynamodb/db";
-import { dbSettingLambdaExecutionLive } from "../Interfaces/AWS/Dynamodb/dbSettings";
-import { ProductSetting } from "./productSettings";
+import { asyncExecution, asyncExecutionArray, getNowTimestamp } from "../../Common/util";
+import { deleteDynamoDb, putDynamoDb, searchDynamoDbBetween } from "../../Interfaces/AWS/Dynamodb/db";
+import { dbSettingLambdaExecutionLive } from "../../Interfaces/AWS/Dynamodb/dbSettings";
+import { ProductSetting } from "../productSettings";
 
 export type LambdaExecutionLive = {
   isExecuteMain: boolean,

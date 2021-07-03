@@ -1,6 +1,6 @@
 import handleError from "../../HandleError/handleError";
 import { Execution, ExecutionAggregated } from "../../Interfaces/DomainType";
-import { StandardTime } from "../StandardTime";
+import { StandardTime } from "../VcatDiContainer/StandardTime";
 
 /**
  * 約定履歴の集計を行う。

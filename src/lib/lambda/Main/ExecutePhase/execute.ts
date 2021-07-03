@@ -1,21 +1,38 @@
 import handleError from "../../HandleError/handleError";
-import { Execution, SimpleOrder, VCATProductContext } from "../../Interfaces/DomainType";
+import { Balance, Execution, ExecutionAggregated, OrderState, SimpleOrder } from "../../Interfaces/DomainType";
 import { getProductContext } from "../context";
 import { ProductId, ProductSetting } from "../productSettings";
-import { StandardTime } from "../StandardTime";
+import { StandardTime } from "../VcatDiContainer/StandardTime";
+import { getVcatDiContainer } from "../VcatDiContainer/vcatDiContainer";
 import { aggregateExecution } from "./aggregateExecution";
-import { ExecutePhaseFunction } from "./interface";
 import { main } from "./OrderLogic/main";
 
-export const execute: ExecutePhaseFunction = async (input) => {
+type Input = {
+  executions: Execution[],
+  shortAggregatedExecutions: ExecutionAggregated[],
+  longAggregatedExecutions: ExecutionAggregated[],
+  orders: { order: SimpleOrder, beforeState: OrderState }[],
+  balanceReal: Balance,
+  balanceVirtual: Balance,
 
-  const { executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting, std } = input;
+  productSetting: ProductSetting,
+};
+type Output = {
+  updatedOrder: { order: SimpleOrder, beforeState?: OrderState }[],
+  newAggregatedExecutions: ExecutionAggregated[],
+  newLongAggregatedExecution?: ExecutionAggregated,
+};
+
+export const execute = async (input: Input): Promise<Output> => {
+
+  const { executions, shortAggregatedExecutions, longAggregatedExecutions, orders, balanceReal, balanceVirtual, productSetting } = input;
   const context = await getProductContext(productSetting.id);
+  const container = await getVcatDiContainer(productSetting.id);
 
-  await updateLastExecutionId(productSetting.id, executions, std);
+  await updateLastExecutionId(productSetting.id, executions, container.standardTime);
 
   const { newShortAggregatedExecutions, newLongAggregatedExecution } =
-    await aggregateExecution(executions, shortAggregatedExecutions, longAggregatedExecutions, std);
+    await aggregateExecution(executions, shortAggregatedExecutions, longAggregatedExecutions, container.standardTime);
 
   const existOutManageOrder = await checkExistOutManageOrder(orders.map((item) => item.order), productSetting);
 
