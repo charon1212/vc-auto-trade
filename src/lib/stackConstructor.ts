@@ -138,23 +138,23 @@ export const stackConstructor = (scope: cdk.Construct, env: string) => {
       restApiName: 'VCAT API',
     });
     const rootResource = api.root.addResource('vcat').addResource('v1').addResource('{productId}');
-    addApiEndpoint({
+    const apiGetLive = addApiEndpoint({
       scope, env, codeDirPath, lambdaEnvVariables, layerArnList, dynamoTable, rootResource,
       handlerName: 'getLive',
       apiMethod: 'GET',
-      resourcePath: 'live',
+      resource: { resourcePath: 'live' },
     });
-    addApiEndpoint({
+    const apiGetContext = addApiEndpoint({
       scope, env, codeDirPath, lambdaEnvVariables, layerArnList, dynamoTable, rootResource,
       handlerName: 'getContext',
       apiMethod: 'GET',
-      resourcePath: 'context',
+      resource: { resourcePath: 'context' },
     });
-    addApiEndpoint({
+    const apiPathcContext = addApiEndpoint({
       scope, env, codeDirPath, lambdaEnvVariables, layerArnList, dynamoTable, rootResource,
       handlerName: 'patchContext',
       apiMethod: 'PATCH',
-      resourcePath: 'context',
+      resource: { existingResource: apiGetContext.resource },
     });
   }
 
@@ -169,14 +169,20 @@ type ApiEndpointParams = {
   layerArnList: string[],
   dynamoTable: Table,
   rootResource: apiGateway.Resource,
-  resourcePath: string,
+  resource: {
+    resourcePath?: string, // API Gatewayのリソースを新規作成する場合は、パスを指定する。
+    existingResource?: apiGateway.Resource, // 既存のリソースに新しくメソッドを追加する場合は、既存のリソースを指定する。
+  },
   apiMethod: string,
 }
 /**
  * APIにエンドポイントを追加する。
  */
 const addApiEndpoint = (params: ApiEndpointParams) => {
-  const { scope, handlerName, env, codeDirPath, lambdaEnvVariables, layerArnList, dynamoTable, rootResource, resourcePath, apiMethod } = params;
+  const { scope, handlerName, env, codeDirPath, lambdaEnvVariables, layerArnList, dynamoTable, rootResource, resource, apiMethod } = params;
+  if (!resource.existingResource && !resource.resourcePath) {
+    throw new Error('既存のリソースを選択するか、新規作成のリソースパスを指定してください。');
+  }
   const apiHandlerLambda = makeLambdaFunc({
     scope,
     id: handlerName + 'Lambda' + env,
@@ -187,10 +193,14 @@ const addApiEndpoint = (params: ApiEndpointParams) => {
     layersArn: layerArnList,
   });
   dynamoTable.grantFullAccess(apiHandlerLambda);
-  const resource = rootResource.addResource(resourcePath);
-  resource.addMethod(apiMethod, new apiGateway.LambdaIntegration(apiHandlerLambda));
-
-  return { apiHandlerLambda, resource };
+  if (resource.existingResource) { // 既存リソースにメソッド追加
+    resource.existingResource.addMethod(apiMethod, new apiGateway.LambdaIntegration(apiHandlerLambda));
+    return { apiHandlerLambda, resource: resource.existingResource };
+  } else {
+    const newResource = rootResource.addResource(resource.resourcePath || ''); // 最初にresourceのattrがどちらも未指定の場合はエラーとしているので、resourcePathがfalsyである可能性は考えない。
+    newResource.addMethod(apiMethod, new apiGateway.LambdaIntegration(apiHandlerLambda));
+    return { apiHandlerLambda, resource: newResource };
+  }
 };
 
 const getEnvSettings = () => {
