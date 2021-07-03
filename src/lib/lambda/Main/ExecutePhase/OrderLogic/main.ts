@@ -43,9 +43,32 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
 
   /** ■■ 発注後の場合、注文の状態を確認して状態遷移する ■■ */
   if (productContext.afterSendOrder && targetOrder) {
-    if (targetOrder.state === 'COMPLETED') {// 注文に失敗した場合
-      orderStateController.onOrderSuccess(targetOrder.main.averagePrice);
-    } else if (targetOrder.state === 'INVALID') { // 注文に成功した場合
+    if (targetOrder.state === 'COMPLETED') {// 注文に成功した場合
+      const timestamp = getNowTimestamp();
+      const price = targetOrder.main.averagePrice!;
+      const amount = targetOrder.main.size;
+      const buyInfo = productContext.buyOrderInfo;
+      if (!price) {
+        await handleError(__filename, 'main', 'code', '約定した注文の価格が取得できませんでした。');
+        return [];
+      }
+      if (productContext.orderPhase === 'Sell' || productContext.orderPhase === 'StopLoss') {
+        if (!buyInfo?.timestamp || !buyInfo?.price || !buyInfo?.amount) {
+          await handleError(__filename, 'main', 'code', '購入情報が取得できませんでした。');
+        } else {
+          diContainer.tradeReportManager.add({
+            buy: {
+              timestamp: buyInfo.timestamp,
+              price: buyInfo.price,
+              amount: buyInfo.amount,
+            },
+            sell: { timestamp, price, amount },
+            isStopLoss: productContext.orderPhase === 'StopLoss',
+          });
+        }
+      }
+      orderStateController.onOrderSuccess({ timestamp, price, amount });
+    } else if (targetOrder.state === 'INVALID') { // 注文に失敗した場合
       orderStateController.onOrderFailed();
     }
   }

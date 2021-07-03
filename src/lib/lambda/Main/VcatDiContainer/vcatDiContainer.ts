@@ -3,10 +3,12 @@ import handleError from "../../HandleError/handleError";
 import { LambdaExecutionChecker } from "./LambdaExecutionChecker";
 import { ProductId, ProductSetting } from "../productSettings";
 import { StandardTime } from "./StandardTime";
+import { TradeReportManager } from "./TradeReportManager";
 
 export type Container = {
   standardTime: StandardTime,
   lambdaExecutionChecker: LambdaExecutionChecker,
+  tradeReportManager: TradeReportManager,
 };
 
 const productContainerList: { productId: ProductId, container: Container }[] = [];
@@ -15,6 +17,7 @@ export const setupVcatDiContainer = (productStting: ProductSetting) => {
   const container: Container = {
     standardTime: new StandardTime(getNowTimestamp()),
     lambdaExecutionChecker: new LambdaExecutionChecker(),
+    tradeReportManager: new TradeReportManager(),
   }
   productContainerList.push({ productId: productStting.id, container });
   return container;
@@ -27,6 +30,7 @@ export const saveVcatDiContainer = async (productSetting: ProductSetting) => {
     throw new Error('ProductContainerが見つからない。');
   }
   productContainer.container.lambdaExecutionChecker.registerDb(productSetting);
+  productContainer.container.tradeReportManager.save(productSetting);
 };
 
 export const getVcatDiContainer = async (productId: ProductId) => {

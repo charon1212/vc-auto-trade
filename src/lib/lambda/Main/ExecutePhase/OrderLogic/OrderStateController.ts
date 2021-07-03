@@ -20,14 +20,15 @@ export class OrderStateController {
   /**
    * 発注した注文が約定した場合
    */
-  onOrderSuccess = async (buyOrderPrice?: number,) => {
+  onOrderSuccess = async (buyOrderInfo?: { timestamp: number, price: number, amount: number }) => {
     const beforeOrderPhase = this.context.orderPhase;
     const afterOrderPhase = getNextOrderPhase(beforeOrderPhase);
 
     this.context.orderPhase = afterOrderPhase;
     this.context.afterSendOrder = false;
     this.context.orderId = undefined;
-    this.context.buyOrderPrice = (beforeOrderPhase === 'Buy') ? buyOrderPrice : undefined;
+    this.context.buyOrderPrice = (beforeOrderPhase === 'Buy') ? buyOrderInfo?.price : undefined; // 互換性維持のためしばらくは残す。
+    this.context.buyOrderInfo = (beforeOrderPhase === 'Buy') ? buyOrderInfo : undefined;
 
     appLogger.info1(`〇〇〇${this.setting.id}-ChangePhase-${beforeOrderPhase}→${afterOrderPhase}`);
     await sendSlackMessage(`★Order success. Phase: ${beforeOrderPhase} => ${afterOrderPhase}`, false);

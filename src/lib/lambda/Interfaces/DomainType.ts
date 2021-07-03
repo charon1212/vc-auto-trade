@@ -73,6 +73,11 @@ export type VCATProductContext = {
   afterSendOrder?: boolean,
   orderId?: string,
   buyOrderPrice?: number,
+  buyOrderInfo?: {
+    timestamp?: number,
+    price?: number,
+    amount?: number,
+  },
   startBuyTimestamp?: number,
   executionSetting?: { // 各工程を実行するかどうか指定する
     executePhase?: boolean, // 処理フェーズを実行する

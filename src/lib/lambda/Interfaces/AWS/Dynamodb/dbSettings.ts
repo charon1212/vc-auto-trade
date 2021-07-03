@@ -1,4 +1,5 @@
 import { LambdaExecutionLive } from "../../../Main/VcatDiContainer/LambdaExecutionChecker";
+import { TradeReport } from "../../../Main/VcatDiContainer/TradeReportManager";
 import { ExecutionAggregated, OrderState, SimpleOrder, VCATProductContext } from "../../DomainType";
 import { DbSetting } from "./db";
 
@@ -63,3 +64,11 @@ export const dbSettingLambdaExecutionLive: DbSetting<LambdaExecutionLive, Lambda
   decode: (item) => (item),
 };
 
+/** ■■■■取引結果■■■■ */
+export const dbSettingTradeReport: DbSetting<TradeReport, TradeReport> = {
+  id: 'tradeReport',
+  classTypeSuffix: 'TRADE_REPORT',
+  sortKey: (item) => (item.buy.timestamp.toString()),
+  encode: (item) => (item),
+  decode: (item) => (item),
+};
