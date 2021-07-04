@@ -29,8 +29,8 @@ export const saveVcatDiContainer = async (productSetting: ProductSetting) => {
     await handleError(__filename, 'getContainer', 'code', 'ProductContainerが見つからない。', { productSetting },);
     throw new Error('ProductContainerが見つからない。');
   }
-  productContainer.container.lambdaExecutionChecker.registerDb(productSetting);
-  productContainer.container.tradeReportManager.save(productSetting);
+  await productContainer.container.lambdaExecutionChecker.registerDb(productSetting);
+  await productContainer.container.tradeReportManager.save(productSetting);
 };
 
 export const getVcatDiContainer = async (productId: ProductId) => {
