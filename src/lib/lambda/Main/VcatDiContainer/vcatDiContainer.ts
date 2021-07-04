@@ -11,9 +11,10 @@ export type Container = {
   tradeReportManager: TradeReportManager,
 };
 
-const productContainerList: { productId: ProductId, container: Container }[] = [];
+let productContainerList: { productId: ProductId, container: Container }[] = [];
 
 export const setupVcatDiContainer = (productStting: ProductSetting) => {
+  productContainerList = [];
   const container: Container = {
     standardTime: new StandardTime(getNowTimestamp()),
     lambdaExecutionChecker: new LambdaExecutionChecker(),
