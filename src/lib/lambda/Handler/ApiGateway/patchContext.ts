@@ -60,8 +60,11 @@ const changeContext = (context: VCATProductContext, json: any) => {
   if (json.afterSendOrder === false) context.afterSendOrder = false;
 
   if (isString(json.orderId)) {
-    if (json.orderId === 'undefined') context.orderId = undefined;
-    context.orderId = json.orderId;
+    if (json.orderId === 'undefined'){
+      context.orderId = undefined;
+    } else {
+      context.orderId = json.orderId;
+    }
   }
 
   if (json.buyOrderPrice === 'undefined') context.buyOrderPrice = undefined;
