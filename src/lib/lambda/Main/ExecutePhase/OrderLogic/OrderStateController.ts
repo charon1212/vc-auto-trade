@@ -44,6 +44,7 @@ export class OrderStateController {
     await sendSlackMessage(`★Order fail. Order phase is ${this.context.orderPhase}`, false);
   };
 
+  // 注文を送信した場合
   onSendOrder = async (order: SimpleOrder, buyOrderPrice?: number,) => {
     this.context.afterSendOrder = true;
     this.context.orderId = order.id;
@@ -61,6 +62,14 @@ export class OrderStateController {
     if (restartTimeSpanMilliseconds !== undefined) this.context.startBuyTimestamp = getNowTimestamp() + restartTimeSpanMilliseconds;
     appLogger.info1(`〇〇〇${this.setting.id}-ChangePhase-Sell→StopLoss`);
     await sendSlackMessage(`★Stop Loss.`, false);
+  };
+
+  // 損切時に、指値の買い注文をキャンセルしたことには成功したが、損切注文の発注に失敗した場合。
+  onFailSendStopLossOrder = async () => {
+    this.context.orderPhase = 'StopLoss';
+    this.context.afterSendOrder = false;
+    this.context.orderId = undefined;
+    await sendSlackMessage(`損切注文の発注に失敗。`, true);
   };
 
   onStartBuy = async () => {

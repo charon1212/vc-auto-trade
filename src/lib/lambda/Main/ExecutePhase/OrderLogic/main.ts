@@ -82,6 +82,9 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
       await sendBuyOrder(productSetting, async (buyOrder) => { // 買い注文に成功した場合の処理
         orderStateController.onSendOrder(buyOrder);
         newOrders.push(buyOrder);
+      }, async () => {// 買い注文に失敗した場合の処理
+        orderStateController.onFailSendStopLossOrder();
+        await handleError(__filename, 'main', 'code', '損切注文の発注に失敗');
       });
     }
   } else if (productContext.orderPhase === 'Sell' && !productContext.afterSendOrder) {
@@ -124,10 +127,10 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
 /**
  * 実際に買い注文を送信し、成功した場合はその結果を配列で返却する。失敗した場合は空配列を返却する。
  */
-const sendBuyOrder = async (productSetting: ProductSetting, onSuccess: (order: SimpleOrder) => void | Promise<void>) => {
+const sendBuyOrder = async (productSetting: ProductSetting, onSuccess: (order: SimpleOrder) => void | Promise<void>, onFailure: () => void | Promise<void>) => {
   const sizeByUnit = 5;
   const buyOrder = await sendOrder(productSetting, 'MARKET', 'BUY', sizeByUnit);
-  buyOrder ? (await onSuccess(buyOrder)) : (await handleError(__filename, 'sendBuyOrder', 'code', '発注に失敗しました。', { productSetting }));
+  buyOrder ? (await onSuccess(buyOrder)) : (await onFailure());
 };
 
 /**
