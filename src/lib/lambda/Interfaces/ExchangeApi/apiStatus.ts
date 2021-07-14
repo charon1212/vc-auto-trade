@@ -1,4 +1,5 @@
 import { appLogger } from "../../Common/log";
+import { executeAsyncInMilliseconds } from "../../Common/util";
 import { ProductSetting } from "../../Main/productSettings";
 import { getStatus } from "./GMO/getStatus";
 
@@ -15,10 +16,11 @@ export const getApiStatus = async (productSetting: ProductSetting) => {
 };
 
 const getApiStatusGmo = async () => {
-  const data = await getStatus();
+  const data = await executeAsyncInMilliseconds(async () => (await getStatus()), 500);
   return data?.status === 'OPEN';
 };
 
+// BitflyerのAPIは使わない方針なので、いったんfalse固定。
 const getApiStatusBitflyer = async () => {
   return false;
 };
