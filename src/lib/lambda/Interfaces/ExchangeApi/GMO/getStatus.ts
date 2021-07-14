@@ -10,7 +10,7 @@ export const getStatus = async () => {
     const res = await sendRequest({
       uri: '/v1/status',
       method: 'GET',
-    }, false, true, true);
+    }, false, true, false);
     if (!res) return undefined; // API通信でエラー、または200系でない。
     const data = res.json.data as GetStatusResult;
     return data;

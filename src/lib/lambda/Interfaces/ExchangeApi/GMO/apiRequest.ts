@@ -18,6 +18,7 @@ export type RequestMethod = 'GET' | 'POST';
  * @param params.queryParams クエリパラメータ
  * @param isPrivateHTTP PrivateHTTPAPIにアクセスする場合はtrue、そうでない場合はfalse。trueにすると、APIキーを使ってHeaderに認証情報を追加する。
  * @param handleNot2xxStatusAsError 200系以外のHTTPStatusをエラーとして扱う場合はtrue、そうでない場合はfalse。trueにすると、200系以外のステータスが来た場合はundefinedを返す。
+ * @param handleStatusNotZeroAsError 200応答のリクエストボディのStatusが0でない場合をエラーとして扱う場合はtrue。そうでない場合はfalse。
  * @returns node-fetchのリクエストレスポンス。
  */
 export const sendRequest = async (params: { uri: string, method: RequestMethod, body?: object, headers?: { [key: string]: string }, queryParams?: { [key: string]: string | undefined } }, isPrivateHTTP: boolean, handleNot2xxStatusAsError: boolean, handleStatusNotZeroAsError: boolean,) => {
