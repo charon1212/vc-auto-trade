@@ -82,6 +82,8 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
       await sendBuyOrder(productSetting, async (buyOrder) => { // 買い注文に成功した場合の処理
         orderStateController.onSendOrder(buyOrder);
         newOrders.push(buyOrder);
+      }, async () => {
+        await handleError(__filename, 'main', 'code', '発注に失敗しました。', { productSetting });
       });
     }
   } else if (productContext.orderPhase === 'Sell' && !productContext.afterSendOrder) {
@@ -91,6 +93,8 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
       await sendSellOrder(productSetting, balanceVirtual.available, buyPrice, async (sellOrder) => { // 売り注文に成功した場合の処理
         orderStateController.onSendOrder(sellOrder);
         newOrders.push(sellOrder);
+      }, async () => {
+        await handleError(__filename, 'main', 'code', '発注に失敗しました。', { productSetting, availableBalanceVirtual: balanceVirtual.available, buyPrice, });
       });
     }
   } else if (productContext.orderPhase === 'Sell' && productContext.afterSendOrder) {
@@ -104,6 +108,9 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
         await sendStopLossOrder(productSetting, size, async (sellOrder) => { // 損切注文を発注できた場合
           newOrders.push(sellOrder);
           orderStateController.onStopLoss(sellOrder, 60 * 60 * 1000);
+        }, async () => {
+          await orderStateController.onFailSendStopLossOrder();
+          await handleError(__filename, 'main', 'code', '損切注文の発注に失敗しました。', { productSetting, size, });
         });
       }
     }
@@ -124,25 +131,25 @@ export const main = async (input: Input): Promise<SimpleOrder[]> => {
 /**
  * 実際に買い注文を送信し、成功した場合はその結果を配列で返却する。失敗した場合は空配列を返却する。
  */
-const sendBuyOrder = async (productSetting: ProductSetting, onSuccess: (order: SimpleOrder) => void | Promise<void>) => {
+const sendBuyOrder = async (productSetting: ProductSetting, onSuccess: (order: SimpleOrder) => void | Promise<void>, onFailure: () => void | Promise<void>) => {
   const sizeByUnit = 5;
   const buyOrder = await sendOrder(productSetting, 'MARKET', 'BUY', sizeByUnit);
-  buyOrder ? (await onSuccess(buyOrder)) : (await handleError(__filename, 'sendBuyOrder', 'code', '発注に失敗しました。', { productSetting }));
+  buyOrder ? (await onSuccess(buyOrder)) : (await onFailure());
 };
 
 /**
  * 実際に売り注文を送信し、成功した場合はその結果を配列で返却する。失敗した場合は空配列を返却する。
  */
-const sendSellOrder = async (productSetting: ProductSetting, availableBalanceVirtual: number, buyPrice: number, onSuccess: (order: SimpleOrder) => void | Promise<void>) => {
+const sendSellOrder = async (productSetting: ProductSetting, availableBalanceVirtual: number, buyPrice: number, onSuccess: (order: SimpleOrder) => void | Promise<void>, onFailure: () => void | Promise<void>) => {
   const size = Math.floor(availableBalanceVirtual / productSetting.orderUnit); // 売れるだけ売る
   const price = moveUp(buyPrice * 1.005, 0, 'floor'); // 整数に四捨五入する。
   const sellOrder = await sendOrder(productSetting, 'LIMIT', 'SELL', size, price);
-  sellOrder ? (await onSuccess(sellOrder)) : (await handleError(__filename, 'sendSellOrder', 'code', '発注に失敗しました。', { productSetting, availableBalanceVirtual, buyPrice, }));
+  sellOrder ? (await onSuccess(sellOrder)) : (await onFailure());
 };
 
-const sendStopLossOrder = async (productSetting: ProductSetting, size: number, onSuccess: (order: SimpleOrder) => void | Promise<void>) => {
+const sendStopLossOrder = async (productSetting: ProductSetting, size: number, onSuccess: (order: SimpleOrder) => void | Promise<void>, onFailure: () => void | Promise<void>) => {
   const sellOrder = await sendOrder(productSetting, 'MARKET', 'SELL', size,);
-  sellOrder ? (await onSuccess(sellOrder)) : (await handleError(__filename, 'sendStopLossOrder', 'code', '発注に失敗しました。', { productSetting, size, }));
+  sellOrder ? (await onSuccess(sellOrder)) : (await onFailure());
 };
 
 const canMakeNewOrder = (context: VCATProductContext) => {
