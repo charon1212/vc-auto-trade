@@ -18,7 +18,7 @@ exports.handler = async function (event: any) {
     }
     const res = await entry();
     return res;
-  } catch (err) {
+  } catch (err: any) {
     const stack = err?.stack;
     await handleError(__filename, 'handler', 'code', `実行エラーをトップレベルのハンドラーで確認。スタックトレース：${stack}`, { event }, err);
     throw err;
